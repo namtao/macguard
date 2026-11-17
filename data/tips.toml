@@ -1,0 +1,64 @@
+# Guide recommendations that cannot be checked automatically, shown by `macguard tips`.
+
+[[section]]
+title.en = "Threat model and basics"
+title.vi = "Mô hình mối đe doạ và nguyên tắc cơ bản"
+tips = [
+  { en = "Write down what you protect, from whom, and what they can do. Add only defenses whose inconvenience is worth it.", vi = "Ghi ra bạn bảo vệ cái gì, khỏi ai, họ làm được gì. Chỉ thêm biện pháp khi sự bất tiện là đáng." },
+  { en = "Prefer Apple silicon and a Mac that supports the latest macOS. Older releases do not get every security fix.", vi = "Ưu tiên máy chip Apple và máy còn hỗ trợ macOS mới nhất. Bản cũ không được vá mọi lỗ hổng." },
+  { en = "Install software only from the App Store or the developer's official site or repository, over HTTPS.", vi = "Chỉ cài phần mềm từ App Store hoặc trang, kho mã chính thức của nhà phát triển, qua HTTPS." },
+  { en = "Subscribe to Apple security-announce or check support.apple.com/100100 for security releases.", vi = "Theo dõi danh sách security-announce của Apple hoặc trang support.apple.com/100100 để biết bản vá bảo mật." },
+]
+
+[[section]]
+title.en = "Accounts and passwords"
+title.vi = "Tài khoản và mật khẩu"
+tips = [
+  { en = "Use a long, unique login password (diceware works well) and leave the password hint empty.", vi = "Dùng mật khẩu đăng nhập dài và riêng (cách diceware rất hợp) và để trống gợi ý mật khẩu." },
+  { en = "Keep credentials in a password manager such as the Passwords app or KeePassXC. Prefer passkeys.", vi = "Lưu mật khẩu trong trình quản lý như app Mật khẩu hoặc KeePassXC. Ưu tiên passkey." },
+  { en = "Turn on multi-factor authentication everywhere. Hardware keys or passkeys beat authenticator apps, which beat SMS.", vi = "Bật xác thực nhiều lớp ở mọi nơi. Khoá phần cứng hoặc passkey tốt hơn app xác thực, app xác thực tốt hơn SMS." },
+  { en = "A YubiKey can also hold keys for encryption, signing and SSH; see drduh/YubiKey-Guide.", vi = "YubiKey còn chứa được khoá để mã hoá, ký và SSH; xem drduh/YubiKey-Guide." },
+  { en = "Turn on Advanced Data Protection for iCloud so backups and most data are end-to-end encrypted.", vi = "Bật Bảo vệ dữ liệu nâng cao cho iCloud để bản sao lưu và hầu hết dữ liệu được mã hoá đầu cuối." },
+]
+
+[[section]]
+title.en = "Network"
+title.vi = "Mạng"
+tips = [
+  { en = "If the firewall blocks signed apps and you need AirDrop, allow it: sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /usr/libexec/rapportd (and /usr/libexec/sharingd), then --unblockapp for both.", vi = "Nếu tường lửa chặn app đã ký mà bạn cần AirDrop, hãy cho phép: sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /usr/libexec/rapportd (và /usr/libexec/sharingd), rồi --unblockapp cho cả hai." },
+  { en = "pf, the packet filter, can block outgoing traffic, whole networks and DNS leaks. It is powerful but complex; start from the example rules in the guide.", vi = "pf (bộ lọc gói) chặn được kết nối đi ra, cả dải mạng và rò rỉ DNS. Mạnh nhưng phức tạp; hãy bắt đầu từ bộ luật mẫu trong tài liệu." },
+  { en = "Privoxy can filter web traffic by hostname as a local proxy on port 8118.", vi = "Privoxy lọc được lưu lượng web theo tên miền, chạy như proxy trên máy ở cổng 8118." },
+  { en = "Use a VPN with a modern protocol (WireGuard or OpenVPN), never PPTP, and make sure traffic cannot leak when the tunnel drops.", vi = "Dùng VPN có giao thức hiện đại (WireGuard hoặc OpenVPN), không dùng PPTP, và đảm bảo lưu lượng không rò ra khi mất kết nối VPN." },
+  { en = "Turn on Private Wi-Fi Address for each network and avoid hidden networks, which make devices probe for them.", vi = "Bật Địa chỉ Wi-Fi riêng cho từng mạng và tránh mạng ẩn, vì chúng khiến thiết bị liên tục dò tìm." },
+  { en = "For SSH clients, use a unique key protected by a passphrase or hardware token and verify host keys.", vi = "Với SSH, dùng khoá riêng có passphrase hoặc khoá phần cứng và kiểm tra host key của máy chủ." },
+]
+
+[[section]]
+title.en = "Browsers and messaging"
+title.vi = "Trình duyệt và nhắn tin"
+tips = [
+  { en = "Keep browser extensions to a minimum from trusted developers, use separate profiles per identity, and block third-party cookies.", vi = "Dùng ít tiện ích trình duyệt nhất có thể, chỉ từ nhà phát triển tin cậy; tách hồ sơ theo từng danh tính; chặn cookie bên thứ ba." },
+  { en = "Consider uBlock Origin (Lite), turning off DNS prefetching in Chrome, and Lockdown Mode or uBlock to stop WebRTC from leaking addresses.", vi = "Cân nhắc uBlock Origin (Lite), tắt DNS prefetching trong Chrome, và Lockdown Mode hoặc uBlock để chặn WebRTC làm lộ địa chỉ." },
+  { en = "Verify Tor Browser and other downloads with gpg --verify and spctl --assess before running them.", vi = "Kiểm Tor Browser và các bản tải khác bằng gpg --verify và spctl --assess trước khi chạy." },
+  { en = "Prefer end-to-end encrypted messengers such as Signal. In iMessage turn on Contact Key Verification.", vi = "Ưu tiên ứng dụng nhắn tin mã hoá đầu cuối như Signal. Trong iMessage hãy bật Xác minh khoá liên hệ." },
+  { en = "Review Siri and Spotlight settings and turn off online suggestions.", vi = "Xem lại cài đặt Siri và Spotlight, tắt gợi ý trực tuyến." },
+]
+
+[[section]]
+title.en = "Files, malware and monitoring"
+title.vi = "File, mã độc và giám sát"
+tips = [
+  { en = "Make .sh and other script files open in TextEdit (Get Info > Open with > Change All) so double-clicking shows them instead of running them.", vi = "Đặt file .sh và các script khác mở bằng TextEdit (Lấy thông tin > Mở bằng > Thay đổi tất cả) để bấm đúp chỉ xem chứ không chạy." },
+  { en = "Encrypt sensitive files or backups with gpg, an encrypted disk image (hdiutil create -encryption) or restic.", vi = "Mã hoá file nhạy cảm hoặc bản sao lưu bằng gpg, ảnh đĩa mã hoá (hdiutil create -encryption) hoặc restic." },
+  { en = "BlockBlock alerts when software installs a background item. drduh/mess and eslogger show every process execution.", vi = "BlockBlock cảnh báo khi phần mềm cài tiến trình nền. drduh/mess và eslogger cho thấy mọi tiến trình được chạy." },
+  { en = "Useful audit commands: log show --last 1h, sudo lsof -Pni, system_profiler SPInstallHistoryDataType, softwareupdate --history.", vi = "Lệnh kiểm tra hữu ích: log show --last 1h, sudo lsof -Pni, system_profiler SPInstallHistoryDataType, softwareupdate --history." },
+]
+
+[[section]]
+title.en = "Physical access"
+title.vi = "Truy cập vật lý"
+tips = [
+  { en = "Do not leave the Mac unattended in unsafe places. Use a privacy screen in public.", vi = "Đừng để máy không người trông ở nơi không an toàn. Dùng miếng dán chống nhìn trộm ở nơi công cộng." },
+  { en = "Against capable adversaries, shut the Mac down rather than sleeping it when not in use, to clear credentials from memory.", vi = "Trước đối thủ có năng lực, hãy tắt hẳn máy thay vì cho ngủ khi không dùng, để xoá thông tin xác thực khỏi bộ nhớ." },
+]
+

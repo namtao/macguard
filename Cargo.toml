@@ -1,0 +1,22 @@
+[package]
+name = "macguard"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.80"
+description = "Audit and harden macOS from the command line, following drduh's macOS Security and Privacy Guide"
+license = "MIT"
+repository = "https://github.com/namtao/macguard"
+readme = "README.md"
+keywords = ["macos", "security", "hardening", "cli", "privacy"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+crossterm = "0.29"
+serde = { version = "1", features = ["derive"] }
+toml = "1"
+unicode-width = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

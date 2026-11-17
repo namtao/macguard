@@ -1,0 +1,41 @@
+# Builds a universal (Apple silicon + Intel) binary when a version tag is pushed,
+# and publishes it with its SHA-256 checksum. `macguard update` downloads these.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+      - name: Check the tag matches Cargo.toml
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          test "v$version" = "$GITHUB_REF_NAME"
+      - name: Test
+        run: cargo test --release
+      - name: Build universal binary
+        run: |
+          cargo build --release --target aarch64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
+          mkdir -p dist
+          lipo -create -output dist/macguard \
+            target/aarch64-apple-darwin/release/macguard \
+            target/x86_64-apple-darwin/release/macguard
+          tar -czf macguard-macos-universal.tar.gz -C dist macguard
+          shasum -a 256 macguard-macos-universal.tar.gz > macguard-macos-universal.tar.gz.sha256
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes \
+            macguard-macos-universal.tar.gz macguard-macos-universal.tar.gz.sha256

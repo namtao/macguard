@@ -1,0 +1,802 @@
+# Check definitions: texts in English and Vietnamese, and the exact fix commands.
+# The check logic for each id lives in src/checks.rs.
+# Fields: why = what it does, skip = risk if not fixed, risk = risk when fixed,
+# how = manual steps. "fix" is run with /bin/bash; as_user runs a command as the
+# invoking user even under sudo and is hidden when the command is displayed.
+# extra = true marks items that are not in the drduh guide.
+
+[[check]]
+id = "filevault"
+severity = "high"
+category = "system"
+settings = "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+title.en = "FileVault disk encryption"
+title.vi = "Mã hoá ổ đĩa bằng FileVault"
+why.en = "Requires your password to unlock the startup disk after every restart. On Apple silicon it also protects the firmware, so the Mac cannot boot another disk, open Recovery or be revived in DFU mode without authorization."
+why.vi = "Bắt buộc nhập mật khẩu để mở khoá ổ khởi động sau mỗi lần khởi động lại. Trên chip Apple, FileVault còn bảo vệ firmware: không ai khởi động được từ ổ khác, vào Recovery hay hồi sinh máy bằng DFU nếu không được phép."
+skip.en = "Someone who takes the Mac can read your files after a restart without knowing your password."
+skip.vi = "Người lấy được máy có thể đọc dữ liệu của bạn sau khi khởi động lại mà không cần biết mật khẩu."
+risk.en = "If you forget the login password and lose the recovery key, the data cannot be recovered. Store the recovery key somewhere safe."
+risk.vi = "Nếu quên mật khẩu đăng nhập và mất khoá khôi phục, dữ liệu mất vĩnh viễn. Hãy cất khoá khôi phục ở nơi an toàn."
+how.en = "System Settings > Privacy & Security > FileVault > Turn On, then store the recovery key safely."
+how.vi = "Cài đặt hệ thống > Quyền riêng tư & Bảo mật > FileVault > Bật, rồi cất khoá khôi phục ở nơi an toàn."
+
+[[check]]
+id = "sip"
+severity = "high"
+category = "system"
+title.en = "System Integrity Protection (SIP)"
+title.vi = "Bảo vệ toàn vẹn hệ thống (SIP)"
+why.en = "Stops any process, even one running as root, from modifying protected system files, services and processes."
+why.vi = "Ngăn mọi tiến trình, kể cả tiến trình chạy quyền root, sửa file, dịch vụ và tiến trình được hệ thống bảo vệ."
+skip.en = "Malware that gets administrator rights can modify macOS itself and hide inside system services."
+skip.vi = "Mã độc có quyền quản trị có thể sửa chính macOS và ẩn mình trong dịch vụ hệ thống."
+risk.en = "Tools that need to modify or trace the system, such as DTrace, stop working."
+risk.vi = "Công cụ cần sửa hoặc theo dõi hệ thống (ví dụ DTrace) sẽ không chạy được."
+how.en = "Only possible from Recovery: shut down, hold the power button, choose Options, open Utilities > Terminal, run 'csrutil enable' and restart."
+how.vi = "Chỉ bật được trong Recovery: tắt máy, giữ nút nguồn, chọn Options, mở Utilities > Terminal, chạy 'csrutil enable' rồi khởi động lại."
+
+[[check]]
+id = "gatekeeper"
+severity = "high"
+category = "system"
+settings = "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+title.en = "Gatekeeper checks downloaded apps"
+title.vi = "Gatekeeper kiểm tra app tải về"
+why.en = "Verifies the signature and Apple notarization of apps before they open for the first time."
+why.vi = "Kiểm tra chữ ký và chứng nhận (notarization) của Apple trước khi app được mở lần đầu."
+skip.en = "Unsigned or tampered apps, a common way to spread malware, open without any warning."
+skip.vi = "App không chữ ký hoặc bị sửa, con đường phát tán mã độc phổ biến, sẽ mở mà không có cảnh báo nào."
+risk.en = "You are warned before opening apps that are not notarized. You can still allow one in Privacy & Security."
+risk.vi = "Bạn sẽ bị cảnh báo khi mở app chưa được chứng nhận. Vẫn có thể cho phép từng app trong Quyền riêng tư & Bảo mật."
+how.en = "Run 'sudo spctl --global-enable', or allow apps from the App Store and identified developers in System Settings > Privacy & Security."
+how.vi = "Chạy 'sudo spctl --global-enable', hoặc chọn cho phép app từ App Store và nhà phát triển đã xác định trong Cài đặt > Quyền riêng tư & Bảo mật."
+fix = '''
+sudo spctl --global-enable
+'''
+
+[[check]]
+id = "firmware"
+severity = "high"
+category = "system"
+title.en = "Startup security set to Full Security"
+title.vi = "Bảo mật khởi động ở mức Full Security"
+why.en = "Only the current, Apple-signed macOS can boot. This is the default."
+why.vi = "Chỉ cho khởi động macOS bản hiện hành có chữ ký của Apple. Đây là mặc định."
+skip.en = "An older, vulnerable or modified operating system and third-party kernel extensions can be loaded."
+skip.vi = "Hệ điều hành cũ có lỗ hổng, bản bị sửa và kernel extension bên thứ ba có thể được nạp."
+risk.en = "Third-party kernel extensions and older macOS versions will no longer boot or load."
+risk.vi = "Kernel extension bên thứ ba và các bản macOS cũ sẽ không nạp hoặc không khởi động được nữa."
+how.en = "Start up in Recovery, open Utilities > Startup Security Utility, select the startup disk and choose Full Security."
+how.vi = "Vào Recovery, mở Utilities > Startup Security Utility, chọn ổ khởi động rồi chọn Full Security."
+
+[[check]]
+id = "updates"
+severity = "high"
+category = "system"
+settings = "x-apple.systempreferences:com.apple.Software-Update-Settings.extension"
+title.en = "Automatic security updates"
+title.vi = "Tự động cập nhật bảo mật"
+why.en = "Turns on automatic checks, downloads, security responses, system data files (XProtect) and macOS updates. The guide asks to keep the system up to date; requiring automatic installation of macOS updates is macguard's stricter reading of that advice."
+why.vi = "Bật tự kiểm tra, tự tải, tự cài bản vá bảo mật khẩn, dữ liệu hệ thống (XProtect) và bản cập nhật macOS. Tài liệu yêu cầu luôn cập nhật hệ thống; việc bắt buộc tự cài bản macOS là cách hiểu chặt hơn của macguard."
+skip.en = "The Mac stays exposed to known vulnerabilities, including ones already exploited in the wild."
+skip.vi = "Máy tiếp tục dính các lỗ hổng đã công bố, kể cả lỗ hổng đang bị khai thác ngoài thực tế."
+risk.en = "macOS may restart by itself to finish an update, so save your work. Rarely, an update breaks an app."
+risk.vi = "macOS có thể tự khởi động lại để cài xong bản cập nhật, nên hãy lưu công việc. Hiếm khi một bản cập nhật làm hỏng app."
+how.en = "System Settings > General > Software Update > Automatic Updates: turn every option on."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Cập nhật phần mềm > Cập nhật tự động: bật tất cả."
+fix = '''
+for key in AutomaticCheckEnabled AutomaticDownload CriticalUpdateInstall ConfigDataInstall AutomaticallyInstallMacOSUpdates; do
+  sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate "$key" -bool true
+done
+'''
+
+[[check]]
+id = "pending_updates"
+severity = "med"
+category = "system"
+settings = "x-apple.systempreferences:com.apple.Software-Update-Settings.extension"
+title.en = "No pending software updates"
+title.vi = "Không còn bản cập nhật chờ cài"
+why.en = "Confirms that the updates macOS already found have been installed. Uses the result of the last background scan, without contacting Apple."
+why.vi = "Xác nhận các bản cập nhật macOS đã tìm thấy đều đã được cài. Dùng kết quả lần quét nền gần nhất, không kết nối tới Apple."
+skip.en = "Security fixes that are already downloaded or available stay uninstalled."
+skip.vi = "Các bản vá bảo mật đã có sẵn vẫn chưa được cài."
+risk.en = "Installing may require a restart and, rarely, breaks an app."
+risk.vi = "Cài đặt có thể cần khởi động lại và hiếm khi làm hỏng một app."
+how.en = "System Settings > General > Software Update > Update Now, or run 'softwareupdate --list' then 'sudo softwareupdate --install --all'."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Cập nhật phần mềm > Cập nhật ngay, hoặc chạy 'softwareupdate --list' rồi 'sudo softwareupdate --install --all'."
+
+[[check]]
+id = "xprotect"
+severity = "med"
+category = "system"
+title.en = "XProtect malware signatures are recent"
+title.vi = "Dữ liệu nhận diện mã độc XProtect còn mới"
+why.en = "XProtect is the antivirus built into macOS. It detects and removes known malware using signatures that Apple updates in the background."
+why.vi = "XProtect là phần mềm diệt virus có sẵn trong macOS, nhận diện và gỡ mã độc đã biết bằng dữ liệu Apple cập nhật ngầm."
+skip.en = "New malware families released since the last update are not detected."
+skip.vi = "Các dòng mã độc mới ra từ lần cập nhật trước sẽ không bị phát hiện."
+risk.en = "None known. The update downloads data from Apple."
+risk.vi = "Không có rủi ro đáng kể. Lệnh tải dữ liệu từ Apple."
+how.en = "Run 'sudo xprotect update' and keep automatic security updates on."
+how.vi = "Chạy 'sudo xprotect update' và giữ bật tự động cập nhật bảo mật."
+fix = '''
+sudo xprotect update
+'''
+
+[[check]]
+id = "backup"
+severity = "med"
+category = "system"
+settings = "x-apple.systempreferences:com.apple.Time-Machine-Settings.extension"
+title.en = "Encrypted Time Machine backup"
+title.vi = "Sao lưu Time Machine có mã hoá"
+why.en = "Keeps restorable copies of your data, encrypted so a lost or stolen backup disk does not expose it. The guide recommends the 3-2-1 model: three copies, two kinds of media, one off-site."
+why.vi = "Giữ bản sao khôi phục được, có mã hoá để ổ sao lưu bị mất hay bị lấy cũng không lộ dữ liệu. Tài liệu khuyên mô hình 3-2-1: ba bản sao, hai loại thiết bị, một bản để nơi khác."
+skip.en = "Ransomware, a disk failure or theft can destroy your data for good. An unencrypted backup disk exposes everything on it."
+skip.vi = "Mã độc tống tiền, hỏng ổ hoặc mất máy có thể làm mất dữ liệu vĩnh viễn. Ổ sao lưu không mã hoá thì lộ toàn bộ dữ liệu trên đó."
+risk.en = "Losing the backup password makes the encrypted backup unreadable. If you back up with another tool, you can ignore this item."
+risk.vi = "Mất mật khẩu sao lưu thì không đọc được bản sao lưu mã hoá. Nếu bạn sao lưu bằng công cụ khác, có thể bỏ qua mục này."
+how.en = "System Settings > General > Time Machine > Add Backup Disk, and tick Encrypt Backup."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Time Machine > Thêm ổ sao lưu, và đánh dấu Mã hoá bản sao lưu."
+
+[[check]]
+id = "lockdown"
+severity = "info"
+category = "system"
+settings = "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+title.en = "Lockdown Mode"
+title.vi = "Chế độ phong toả (Lockdown Mode)"
+why.en = "Disables features commonly abused by sophisticated, targeted attacks (some web technologies, attachments, incoming invitations, wired accessories)."
+why.vi = "Tắt các tính năng hay bị tấn công có chủ đích lợi dụng (một số công nghệ web, tệp đính kèm, lời mời đến, phụ kiện cắm dây)."
+skip.en = "Only matters if you may be personally targeted, for example as a journalist, activist or executive."
+skip.vi = "Chỉ đáng lo nếu bạn có thể bị nhắm tới riêng, ví dụ nhà báo, nhà hoạt động hay lãnh đạo doanh nghiệp."
+risk.en = "Many websites and features work less well. You can exclude trusted websites in Safari."
+risk.vi = "Nhiều trang web và tính năng chạy kém đi. Có thể loại trừ trang tin cậy trong Safari."
+how.en = "System Settings > Privacy & Security > Lockdown Mode > Turn On."
+how.vi = "Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Chế độ phong toả > Bật."
+
+[[check]]
+id = "autologin"
+severity = "high"
+category = "accounts"
+extra = true
+settings = "x-apple.systempreferences:com.apple.Users-Groups-Settings.extension"
+title.en = "Automatic login is off"
+title.vi = "Tắt tự động đăng nhập"
+why.en = "Makes the Mac ask for a password at the login window after every restart."
+why.vi = "Bắt buộc nhập mật khẩu ở màn hình đăng nhập sau mỗi lần khởi động lại."
+skip.en = "Anyone who powers on the Mac gets straight into your account. Automatic login also stores your password in a weakly protected file (/etc/kcpassword)."
+skip.vi = "Ai bật máy cũng vào thẳng tài khoản của bạn. Tự đăng nhập còn lưu mật khẩu trong một file được bảo vệ kém (/etc/kcpassword)."
+risk.en = "You type your password after each restart. Unattended machines that must come back on their own after a power cut will wait at the login window."
+risk.vi = "Bạn phải gõ mật khẩu sau mỗi lần khởi động lại. Máy chạy không người trông sẽ dừng ở màn hình đăng nhập sau khi mất điện."
+how.en = "System Settings > Users & Groups > Automatically log in as: Off."
+how.vi = "Cài đặt hệ thống > Người dùng & Nhóm > Tự động đăng nhập bằng: Tắt."
+fix = '''
+sudo sysadminctl -autologin off
+'''
+
+[[check]]
+id = "screenlock"
+severity = "med"
+category = "accounts"
+settings = "x-apple.systempreferences:com.apple.Lock-Screen-Settings.extension"
+title.en = "Password required immediately after sleep or screen saver"
+title.vi = "Đòi mật khẩu ngay khi ngủ hoặc bật màn hình chờ"
+why.en = "Locks the session as soon as the screen saver starts or the display sleeps. The guide sets this with 'defaults write com.apple.screensaver askForPassword'; current macOS no longer reads those keys, so macguard uses sysadminctl, which sets the same option as System Settings."
+why.vi = "Khoá phiên làm việc ngay khi màn hình chờ chạy hoặc màn hình tắt. Tài liệu dùng 'defaults write com.apple.screensaver askForPassword'; macOS hiện tại không còn đọc các khoá đó, nên macguard dùng sysadminctl, đặt đúng tuỳ chọn như trong Cài đặt hệ thống."
+skip.en = "During the delay, anyone near the Mac can use your unlocked session."
+skip.vi = "Trong khoảng chờ đó, người bên cạnh có thể dùng phiên đang mở của bạn."
+risk.en = "You type your password (or use Touch ID) every time the screen wakes. The command asks for your login password."
+risk.vi = "Bạn phải nhập mật khẩu (hoặc Touch ID) mỗi khi đánh thức màn hình. Lệnh sẽ hỏi mật khẩu đăng nhập của bạn."
+how.en = "System Settings > Lock Screen > Require password after screen saver begins or display is turned off: Immediately."
+how.vi = "Cài đặt hệ thống > Màn hình khoá > Yêu cầu mật khẩu sau khi bắt đầu trình bảo vệ màn hình hoặc tắt màn hình: Ngay lập tức."
+fix = '''
+as_user sysadminctl -screenLock immediate -password -
+'''
+
+[[check]]
+id = "guest"
+severity = "med"
+category = "accounts"
+extra = true
+settings = "x-apple.systempreferences:com.apple.Users-Groups-Settings.extension"
+title.en = "Guest account is off"
+title.vi = "Tắt tài khoản Khách (Guest)"
+why.en = "Removes the passwordless Guest user from the login window."
+why.vi = "Bỏ tài khoản Khách không mật khẩu khỏi màn hình đăng nhập."
+skip.en = "Anyone can log in without a password and use the Mac, its network and its shared folders."
+skip.vi = "Ai cũng đăng nhập được không cần mật khẩu và dùng máy, mạng, thư mục chia sẻ."
+risk.en = "Visitors need their own account to use the Mac. Find My can no longer locate a lost Mac through someone using the Guest account."
+risk.vi = "Khách muốn dùng máy phải có tài khoản riêng. Tính năng Tìm không còn định vị được máy bị mất qua người dùng tài khoản Khách."
+how.en = "System Settings > Users & Groups > Guest User > Allow guests to log in: Off."
+how.vi = "Cài đặt hệ thống > Người dùng & Nhóm > Người dùng khách > Cho phép khách đăng nhập: Tắt."
+fix = '''
+sudo sysadminctl -guestAccount off
+'''
+
+[[check]]
+id = "hint"
+severity = "low"
+category = "accounts"
+title.en = "Password hints are not shown"
+title.vi = "Không hiện gợi ý mật khẩu"
+why.en = "Stops the login window from showing your password hint after failed attempts."
+why.vi = "Màn hình đăng nhập không hiện gợi ý mật khẩu sau các lần gõ sai."
+skip.en = "A hint can help someone guess your password."
+skip.vi = "Gợi ý có thể giúp người khác đoán ra mật khẩu."
+risk.en = "If you forget your password, no hint appears. Keep it in a password manager."
+risk.vi = "Nếu quên mật khẩu sẽ không có gợi ý. Hãy lưu nó trong trình quản lý mật khẩu."
+how.en = "System Settings > Lock Screen > Show password hints: Off."
+how.vi = "Cài đặt hệ thống > Màn hình khoá > Hiển thị gợi ý mật khẩu: Tắt."
+fix = '''
+sudo defaults write /Library/Preferences/com.apple.loginwindow RetriesUntilHint -int 0
+'''
+
+[[check]]
+id = "admin_user"
+severity = "low"
+category = "accounts"
+settings = "x-apple.systempreferences:com.apple.Users-Groups-Settings.extension"
+title.en = "Daily account is a standard user"
+title.vi = "Tài khoản dùng hằng ngày là tài khoản thường"
+why.en = "Keeps administrator rights in a separate account, so programs you run day to day cannot make system-wide changes with your credentials."
+why.vi = "Tách quyền quản trị ra một tài khoản riêng, để chương trình bạn chạy hằng ngày không thể dùng thông tin của bạn thay đổi toàn hệ thống."
+skip.en = "Any program you run can ask for sudo or install system software using the password you type every day."
+skip.vi = "Bất kỳ chương trình nào bạn chạy cũng có thể xin sudo hoặc cài phần mềm hệ thống bằng chính mật khẩu bạn gõ hằng ngày."
+risk.en = "You enter the admin account's name and password for system changes. Some apps assume an admin user and may not work."
+risk.vi = "Bạn phải nhập tên và mật khẩu tài khoản quản trị khi thay đổi hệ thống. Một số app mặc định người dùng là quản trị và có thể không chạy."
+how.en = "Create a second administrator account in System Settings > Users & Groups, log in to it, then change your daily account to Standard."
+how.vi = "Tạo thêm một tài khoản quản trị trong Cài đặt > Người dùng & Nhóm, đăng nhập vào đó, rồi đổi tài khoản hằng ngày thành Tài khoản thường."
+
+[[check]]
+id = "hostname"
+severity = "low"
+category = "accounts"
+settings = "x-apple.systempreferences:com.apple.SystemProfiler.AboutExtension"
+title.en = "Computer name does not identify you"
+title.vi = "Tên máy không lộ danh tính"
+why.en = "The computer name is broadcast to local networks by sharing and discovery services."
+why.vi = "Tên máy được phát ra mạng nội bộ qua các dịch vụ chia sẻ và dò tìm."
+skip.en = "Anyone on the same network (café, hotel, office) can see your name or username."
+skip.vi = "Người dùng chung mạng (quán cà phê, khách sạn, công ty) thấy được tên hoặc tên đăng nhập của bạn."
+risk.en = "Devices that know this Mac by its old name (SSH configs, shared folders, AirDrop contacts) see a new name."
+risk.vi = "Thiết bị đang biết máy theo tên cũ (cấu hình SSH, thư mục chia sẻ, danh bạ AirDrop) sẽ thấy tên mới."
+how.en = "System Settings > General > About > Name, or run 'sudo scutil --set ComputerName <name>' (also HostName and LocalHostName)."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Giới thiệu > Tên, hoặc chạy 'sudo scutil --set ComputerName <tên>' (và HostName, LocalHostName)."
+fix = '''
+printf "New computer name (e.g. MacBook) / Tên máy mới: "
+read -r new_name
+[ -n "$new_name" ] || return 1
+host_name=$(printf %s "$new_name" | tr -cs 'A-Za-z0-9-' '-' | sed 's/^-*//; s/-*$//')
+sudo scutil --set ComputerName "$new_name"
+sudo scutil --set HostName "$host_name"
+sudo scutil --set LocalHostName "$host_name"
+'''
+
+[[check]]
+id = "sudo_home"
+severity = "low"
+category = "accounts"
+title.en = "sudo does not keep your HOME"
+title.vi = "sudo không giữ biến HOME của bạn"
+why.en = "macOS keeps HOME when you use sudo, so programs running as root read configuration files from your home folder. This removes HOME from env_keep using a separate, validated file in /etc/sudoers.d."
+why.vi = "macOS giữ nguyên HOME khi dùng sudo, nên chương trình chạy quyền root đọc file cấu hình trong thư mục của bạn. Bản sửa bỏ HOME khỏi env_keep bằng một file riêng trong /etc/sudoers.d, có kiểm cú pháp trước."
+skip.en = "A program that can write to your home folder can plant configuration that root later loads."
+skip.vi = "Chương trình ghi được vào thư mục của bạn có thể cài sẵn cấu hình để root nạp về sau."
+risk.en = "Commands run with sudo use root's home (/var/root), so your personal tool settings no longer apply under sudo. Undo by deleting /etc/sudoers.d/macguard-env-home."
+risk.vi = "Lệnh chạy bằng sudo dùng thư mục của root (/var/root), nên cấu hình công cụ cá nhân không còn áp dụng khi dùng sudo. Hoàn tác bằng cách xoá /etc/sudoers.d/macguard-env-home."
+how.en = "Run 'sudo visudo -f /etc/sudoers.d/macguard-env-home' and add the line: Defaults env_keep -= \"HOME\""
+how.vi = "Chạy 'sudo visudo -f /etc/sudoers.d/macguard-env-home' rồi thêm dòng: Defaults env_keep -= \"HOME\""
+fix = '''
+rule_file=$(mktemp)
+echo 'Defaults env_keep -= "HOME"' > "$rule_file"
+sudo visudo -cf "$rule_file" && sudo install -m 0440 -o root -g wheel "$rule_file" /etc/sudoers.d/macguard-env-home
+rm -f "$rule_file"
+'''
+
+[[check]]
+id = "firewall"
+severity = "high"
+category = "network"
+settings = "x-apple.systempreferences:com.apple.Network-Settings.extension"
+title.en = "Application firewall is on"
+title.vi = "Bật tường lửa ứng dụng"
+why.en = "Controls which apps may accept incoming network connections. It does not filter outgoing traffic."
+why.vi = "Kiểm soát app nào được nhận kết nối mạng từ bên ngoài. Không lọc kết nối đi ra."
+skip.en = "Any app or service listening on a port can be reached by every device on the same network."
+skip.vi = "Mọi app hay dịch vụ đang mở cổng đều bị thiết bị cùng mạng truy cập được."
+risk.en = "macOS asks the first time a new app wants to accept incoming connections. Malware with admin rights can still turn the firewall off."
+risk.vi = "macOS sẽ hỏi lần đầu khi một app mới muốn nhận kết nối. Mã độc có quyền quản trị vẫn tắt được tường lửa."
+how.en = "System Settings > Network > Firewall: On."
+how.vi = "Cài đặt hệ thống > Mạng > Tường lửa: Bật."
+fix = '''
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+sudo pkill -HUP socketfilterfw
+'''
+
+[[check]]
+id = "stealth"
+severity = "med"
+category = "network"
+settings = "x-apple.systempreferences:com.apple.Network-Settings.extension"
+title.en = "Firewall stealth mode"
+title.vi = "Tường lửa chế độ ẩn (stealth)"
+why.en = "The Mac stops answering probes, pings and connection attempts on closed ports."
+why.vi = "Máy không trả lời các lần dò, ping và kết nối tới cổng đang đóng."
+skip.en = "Network scanners easily find the Mac and pick it as a target."
+skip.vi = "Công cụ quét mạng dễ dàng tìm thấy máy và chọn làm mục tiêu."
+risk.en = "Other devices cannot ping the Mac, which can confuse network troubleshooting."
+risk.vi = "Thiết bị khác không ping được máy, có thể gây khó khi dò lỗi mạng."
+how.en = "System Settings > Network > Firewall > Options > Enable stealth mode."
+how.vi = "Cài đặt hệ thống > Mạng > Tường lửa > Tuỳ chọn > Bật chế độ ẩn."
+fix = '''
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+sudo pkill -HUP socketfilterfw
+'''
+
+[[check]]
+id = "signed"
+severity = "low"
+category = "network"
+settings = "x-apple.systempreferences:com.apple.Network-Settings.extension"
+title.en = "Firewall asks before allowing signed apps"
+title.vi = "Tường lửa hỏi trước khi cho app đã ký nhận kết nối"
+why.en = "By default the firewall silently allows incoming connections to software signed by Apple or an identified developer. This makes macOS ask first."
+why.vi = "Mặc định tường lửa tự cho phần mềm có chữ ký của Apple hoặc nhà phát triển đã xác định nhận kết nối. Bản sửa bắt macOS hỏi bạn trước."
+skip.en = "Any signed app, including a signed but malicious one, can accept connections without you knowing."
+skip.vi = "Bất kỳ app có chữ ký nào, kể cả app có chữ ký nhưng độc hại, đều nhận kết nối mà bạn không biết."
+risk.en = "You get more prompts. AirDrop stops working until you allow rapportd and sharingd (see 'macguard tips')."
+risk.vi = "Bạn sẽ bị hỏi nhiều hơn. AirDrop ngừng chạy cho tới khi bạn cho phép rapportd và sharingd (xem 'macguard tips')."
+how.en = "System Settings > Network > Firewall > Options: turn off automatically allowing built-in and downloaded signed software."
+how.vi = "Cài đặt hệ thống > Mạng > Tường lửa > Tuỳ chọn: tắt tự động cho phép phần mềm có sẵn và phần mềm tải về đã ký."
+fix = '''
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setallowsigned off
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setallowsignedapp off
+sudo pkill -HUP socketfilterfw
+'''
+
+[[check]]
+id = "outbound_fw"
+severity = "info"
+category = "network"
+title.en = "Outbound firewall app installed"
+title.vi = "Có app tường lửa kiểm soát kết nối đi ra"
+why.en = "Apps such as LuLu, Little Snitch or Radio Silence show and block outgoing connections, which the built-in firewall cannot do."
+why.vi = "App như LuLu, Little Snitch hay Radio Silence cho thấy và chặn kết nối đi ra, việc tường lửa có sẵn không làm được."
+skip.en = "You cannot see or stop apps and malware sending data out."
+skip.vi = "Bạn không thấy và không chặn được app hay mã độc gửi dữ liệu ra ngoài."
+risk.en = "Frequent allow or block prompts at first. These apps install a system extension with broad network access."
+risk.vi = "Lúc đầu bị hỏi cho phép hay chặn rất nhiều. Các app này cài một system extension có quyền rộng trên mạng."
+how.en = "Install LuLu (free, open source) or Little Snitch, then review its rules. pf (see 'macguard tips') is an advanced alternative."
+how.vi = "Cài LuLu (miễn phí, mã nguồn mở) hoặc Little Snitch rồi xem lại luật của nó. pf (xem 'macguard tips') là lựa chọn nâng cao."
+
+[[check]]
+id = "dns"
+severity = "low"
+category = "network"
+settings = "x-apple.systempreferences:com.apple.Network-Settings.extension"
+title.en = "Encrypted or filtering DNS"
+title.vi = "DNS mã hoá hoặc có lọc"
+why.en = "Encrypts DNS lookups with a DNS profile (Quad9, AdGuard, NextDNS) or a local resolver such as dnscrypt-proxy or dnsmasq."
+why.vi = "Mã hoá truy vấn tên miền bằng DNS profile (Quad9, AdGuard, NextDNS) hoặc bộ phân giải chạy trên máy như dnscrypt-proxy, dnsmasq."
+skip.en = "Your network provider and anyone on the network can see, log or alter every domain you visit."
+skip.vi = "Nhà mạng và người dùng chung mạng có thể xem, ghi lại hoặc sửa mọi tên miền bạn truy cập."
+risk.en = "The DNS provider now sees your lookups. Some VPNs and captive portals override or conflict with custom DNS."
+risk.vi = "Nhà cung cấp DNS sẽ thấy truy vấn của bạn. Một số VPN và mạng có trang đăng nhập ghi đè hoặc xung đột với DNS tuỳ chỉnh."
+how.en = "Install a DNS profile from Quad9, AdGuard or NextDNS, or 'brew install dnscrypt-proxy' and point DNS to 127.0.0.1."
+how.vi = "Cài DNS profile của Quad9, AdGuard hoặc NextDNS, hoặc 'brew install dnscrypt-proxy' rồi trỏ DNS về 127.0.0.1."
+
+[[check]]
+id = "hosts_blocklist"
+severity = "info"
+category = "network"
+title.en = "Hosts file blocks known bad domains"
+title.vi = "File hosts chặn tên miền xấu đã biết"
+why.en = "A blocklist in /etc/hosts stops connections to known malware, advertising and tracking domains for every app."
+why.vi = "Danh sách chặn trong /etc/hosts ngăn mọi app kết nối tới tên miền mã độc, quảng cáo và theo dõi đã biết."
+skip.en = "Apps can reach these domains unless something else (DNS filter, outbound firewall) blocks them."
+skip.vi = "App vẫn kết nối được tới các tên miền đó nếu không có lớp khác (DNS lọc, tường lửa chiều ra) chặn."
+risk.en = "A broad list can break some websites. Always keep the '127.0.0.1 localhost' line."
+risk.vi = "Danh sách quá rộng có thể làm hỏng vài trang web. Luôn giữ dòng '127.0.0.1 localhost'."
+how.en = "Append a list such as StevenBlack/hosts: curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | sudo tee -a /etc/hosts"
+how.vi = "Thêm một danh sách như StevenBlack/hosts: curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts | sudo tee -a /etc/hosts"
+
+[[check]]
+id = "certs"
+severity = "med"
+category = "network"
+title.en = "No custom certificate trust settings"
+title.vi = "Không có chứng chỉ được tin cậy thêm"
+why.en = "Looks for certificates that a user, admin, VPN, security product or MDM has marked as trusted beyond the Apple root store."
+why.vi = "Tìm chứng chỉ được người dùng, quản trị, VPN, phần mềm bảo mật hoặc MDM đánh dấu tin cậy ngoài bộ chứng chỉ gốc của Apple."
+skip.en = "An unexpected trusted certificate lets whoever holds its key silently intercept your HTTPS traffic."
+skip.vi = "Một chứng chỉ được tin cậy ngoài ý muốn cho phép người giữ khoá của nó âm thầm đọc trộm lưu lượng HTTPS của bạn."
+risk.en = "Removing trust from a certificate you do need (company network, VPN, debugging proxy) breaks those connections."
+risk.vi = "Bỏ tin cậy một chứng chỉ bạn thật sự cần (mạng công ty, VPN, proxy gỡ lỗi) sẽ làm hỏng các kết nối đó."
+how.en = "Open Keychain Access, check the login, Local Items and System keychains, and set any certificate you do not recognise to Never Trust."
+how.vi = "Mở Keychain Access, xem các keychain login, Local Items và System, đặt chứng chỉ bạn không nhận ra thành Never Trust."
+
+[[check]]
+id = "wifi"
+severity = "low"
+category = "network"
+settings = "x-apple.systempreferences:com.apple.wifi-settings-extension"
+title.en = "Wi-Fi uses WPA3"
+title.vi = "Wi-Fi dùng WPA3"
+why.en = "WPA3 protects the Wi-Fi password against offline guessing and encrypts traffic better than WPA2."
+why.vi = "WPA3 bảo vệ mật khẩu Wi-Fi khỏi bị đoán ngoại tuyến và mã hoá lưu lượng tốt hơn WPA2."
+skip.en = "Someone nearby can capture the handshake and try to crack the Wi-Fi password."
+skip.vi = "Người ở gần có thể bắt gói bắt tay và dò mật khẩu Wi-Fi."
+risk.en = "Older devices that only support WPA2 cannot join a WPA3-only network."
+risk.vi = "Thiết bị cũ chỉ hỗ trợ WPA2 không vào được mạng chỉ dùng WPA3."
+how.en = "Set the router to WPA3 Personal (or WPA2/WPA3), and turn on Private Wi-Fi Address for each network in System Settings > Wi-Fi > Details."
+how.vi = "Đặt router sang WPA3 Personal (hoặc WPA2/WPA3), và bật Địa chỉ Wi-Fi riêng cho từng mạng trong Cài đặt > Wi-Fi > Chi tiết."
+
+[[check]]
+id = "bonjour"
+severity = "low"
+category = "network"
+title.en = "Bonjour advertising is off"
+title.vi = "Tắt quảng bá Bonjour"
+why.en = "Stops the Mac from announcing itself and its services to the local network with multicast DNS."
+why.vi = "Máy không còn tự quảng bá bản thân và dịch vụ của nó ra mạng nội bộ qua multicast DNS."
+skip.en = "Every device on the network sees the Mac's name and the services it offers."
+skip.vi = "Mọi thiết bị trong mạng thấy tên máy và các dịch vụ máy đang mở."
+risk.en = "AirPlay, AirPrint, AirDrop discovery and file sharing to this Mac stop working. Takes effect after a restart. Undo: sudo defaults delete /Library/Preferences/com.apple.mDNSResponder NoMulticastAdvertisements"
+risk.vi = "AirPlay, AirPrint, việc dò thấy máy qua AirDrop và chia sẻ file tới máy này ngừng chạy. Có hiệu lực sau khi khởi động lại. Hoàn tác: sudo defaults delete /Library/Preferences/com.apple.mDNSResponder NoMulticastAdvertisements"
+how.en = "Run 'sudo defaults write /Library/Preferences/com.apple.mDNSResponder NoMulticastAdvertisements -bool YES' and restart."
+how.vi = "Chạy 'sudo defaults write /Library/Preferences/com.apple.mDNSResponder NoMulticastAdvertisements -bool YES' rồi khởi động lại."
+fix = '''
+sudo defaults write /Library/Preferences/com.apple.mDNSResponder NoMulticastAdvertisements -bool true
+'''
+
+[[check]]
+id = "handoff"
+severity = "low"
+category = "network"
+settings = "x-apple.systempreferences:com.apple.AirDrop-Handoff-Settings.extension"
+title.en = "Handoff is off"
+title.vi = "Tắt Handoff"
+why.en = "Stops the Mac from advertising your current activity to nearby Apple devices over Bluetooth and the network."
+why.vi = "Máy không còn phát hoạt động hiện tại của bạn tới thiết bị Apple ở gần qua Bluetooth và mạng."
+skip.en = "Nearby devices can detect the Mac, and rapportd keeps a network port open."
+skip.vi = "Thiết bị ở gần dò thấy máy, và rapportd giữ một cổng mạng luôn mở."
+risk.en = "You lose continuing work between devices and Universal Clipboard. Log out and back in for it to take full effect."
+risk.vi = "Mất tính năng làm tiếp việc giữa các thiết bị và Bộ nhớ tạm chung. Đăng xuất rồi đăng nhập lại để có hiệu lực đầy đủ."
+how.en = "System Settings > General > AirDrop & Handoff > Allow Handoff between this Mac and your iCloud devices: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > AirDrop & Handoff > Cho phép Handoff giữa máy Mac này và các thiết bị iCloud: Tắt."
+fix = '''
+as_user defaults -currentHost write com.apple.coreservices.useractivityd ActivityAdvertisingAllowed -bool false
+as_user defaults -currentHost write com.apple.coreservices.useractivityd ActivityReceivingAllowed -bool false
+'''
+
+[[check]]
+id = "bluetooth"
+severity = "info"
+category = "network"
+settings = "x-apple.systempreferences:com.apple.BluetoothSettings"
+title.en = "Bluetooth is off when not needed"
+title.vi = "Tắt Bluetooth khi không dùng"
+why.en = "Turning Bluetooth off removes a wireless attack surface and a way to track the device."
+why.vi = "Tắt Bluetooth bỏ đi một bề mặt tấn công không dây và một cách theo dõi thiết bị."
+skip.en = "Bluetooth vulnerabilities and tracking remain possible within radio range."
+skip.vi = "Lỗ hổng Bluetooth và việc bị theo dõi vẫn có thể xảy ra trong tầm sóng."
+risk.en = "Bluetooth keyboards, mice, headphones, AirDrop and Handoff stop working. Do not turn it off if Bluetooth is your only keyboard."
+risk.vi = "Bàn phím, chuột, tai nghe Bluetooth, AirDrop và Handoff ngừng chạy. Đừng tắt nếu bàn phím duy nhất của bạn là Bluetooth."
+how.en = "Control Center or System Settings > Bluetooth: Off."
+how.vi = "Trung tâm điều khiển hoặc Cài đặt hệ thống > Bluetooth: Tắt."
+
+[[check]]
+id = "ssh"
+severity = "med"
+category = "sharing"
+settings = "x-apple.systempreferences:com.apple.Sharing-Settings.extension"
+title.en = "Remote Login (SSH server) is off"
+title.vi = "Tắt Đăng nhập từ xa (máy chủ SSH)"
+why.en = "Turns off the SSH server, which is off by default on macOS."
+why.vi = "Tắt máy chủ SSH, vốn tắt sẵn trên macOS."
+skip.en = "Anyone who can reach port 22 can try to log in, for example by guessing passwords."
+skip.vi = "Ai tới được cổng 22 cũng có thể thử đăng nhập, ví dụ dò mật khẩu."
+risk.en = "You can no longer connect to this Mac with ssh, scp or rsync over SSH. If you need SSH, keep it on and pass the ssh_password item instead."
+risk.vi = "Bạn không còn kết nối vào máy bằng ssh, scp hay rsync qua SSH. Nếu cần SSH, hãy giữ bật và làm đạt mục ssh_password."
+how.en = "System Settings > General > Sharing > Remote Login: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Đăng nhập từ xa: Tắt."
+fix = '''
+sudo systemsetup -f -setremotelogin off || {
+  sudo launchctl disable system/com.openssh.sshd
+  sudo launchctl bootout system/com.openssh.sshd
+}
+'''
+
+[[check]]
+id = "ssh_password"
+severity = "med"
+category = "sharing"
+title.en = "SSH server accepts keys only, not passwords"
+title.vi = "Máy chủ SSH chỉ nhận khoá, không nhận mật khẩu"
+why.en = "When Remote Login is on, refuses password and keyboard-interactive logins so only SSH keys work. Written to a separate file and validated with 'sshd -t'."
+why.vi = "Khi Đăng nhập từ xa đang bật, từ chối đăng nhập bằng mật khẩu và keyboard-interactive để chỉ khoá SSH dùng được. Ghi vào file riêng và kiểm bằng 'sshd -t'."
+skip.en = "Attackers who reach port 22 can guess or reuse your password to get a shell."
+skip.vi = "Kẻ tấn công tới được cổng 22 có thể đoán hoặc dùng lại mật khẩu của bạn để vào máy."
+risk.en = "If your public key is not in ~/.ssh/authorized_keys yet, you lock yourself out of SSH. Undo by deleting /etc/ssh/sshd_config.d/000-macguard.conf."
+risk.vi = "Nếu khoá công khai của bạn chưa có trong ~/.ssh/authorized_keys, bạn sẽ tự khoá mình khỏi SSH. Hoàn tác bằng cách xoá /etc/ssh/sshd_config.d/000-macguard.conf."
+how.en = "Add 'PasswordAuthentication no' and 'KbdInteractiveAuthentication no' to a file in /etc/ssh/sshd_config.d/, then run 'sudo sshd -t'."
+how.vi = "Thêm 'PasswordAuthentication no' và 'KbdInteractiveAuthentication no' vào một file trong /etc/ssh/sshd_config.d/, rồi chạy 'sudo sshd -t'."
+fix = '''
+printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\n' | sudo tee /etc/ssh/sshd_config.d/000-macguard.conf >/dev/null
+sudo sshd -t || sudo rm -f /etc/ssh/sshd_config.d/000-macguard.conf
+'''
+
+[[check]]
+id = "screensharing"
+severity = "med"
+category = "sharing"
+extra = true
+settings = "x-apple.systempreferences:com.apple.Sharing-Settings.extension"
+title.en = "Screen Sharing is off"
+title.vi = "Tắt Chia sẻ màn hình"
+why.en = "Turns off the built-in VNC server (port 5900)."
+why.vi = "Tắt máy chủ VNC có sẵn (cổng 5900)."
+skip.en = "Anyone who reaches port 5900 can try to view and control the screen."
+skip.vi = "Ai tới được cổng 5900 cũng có thể thử xem và điều khiển màn hình."
+risk.en = "You can no longer control this Mac remotely with Screen Sharing. On a headless Mac without a display, keep it on."
+risk.vi = "Bạn không còn điều khiển máy từ xa bằng Chia sẻ màn hình. Với máy không gắn màn hình, hãy giữ bật."
+how.en = "System Settings > General > Sharing > Screen Sharing: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Chia sẻ màn hình: Tắt."
+fix = '''
+sudo launchctl disable system/com.apple.screensharing
+sudo launchctl bootout system/com.apple.screensharing
+'''
+
+[[check]]
+id = "airplay"
+severity = "med"
+category = "sharing"
+extra = true
+settings = "x-apple.systempreferences:com.apple.AirDrop-Handoff-Settings.extension"
+title.en = "AirPlay Receiver is off"
+title.vi = "Tắt Bộ thu AirPlay"
+why.en = "Stops Control Center from listening on ports 5000 and 7000 on every network interface."
+why.vi = "Trung tâm điều khiển ngừng mở cổng 5000 và 7000 trên mọi giao diện mạng."
+skip.en = "Devices on the network can find the Mac and send content to it, and two more ports stay open."
+skip.vi = "Thiết bị trong mạng dò thấy máy và gửi nội dung tới máy được, đồng thời thêm hai cổng luôn mở."
+risk.en = "You can no longer AirPlay from an iPhone or iPad to this Mac. Control Center restarts briefly."
+risk.vi = "Bạn không còn AirPlay từ iPhone hay iPad sang máy này được. Trung tâm điều khiển khởi động lại trong giây lát."
+how.en = "System Settings > General > AirDrop & Handoff > AirPlay Receiver: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > AirDrop & Handoff > Bộ thu AirPlay: Tắt."
+fix = '''
+as_user defaults -currentHost write com.apple.controlcenter AirplayRecieverEnabled -bool false
+as_user killall ControlCenter
+sleep 3
+'''
+
+[[check]]
+id = "listeners"
+severity = "med"
+category = "sharing"
+title.en = "No other service listens on the network"
+title.vi = "Không dịch vụ nào khác mở cổng ra mạng"
+why.en = "Lists every process accepting TCP connections on an address other than localhost. Without sudo only your own processes are visible."
+why.vi = "Liệt kê mọi tiến trình nhận kết nối TCP trên địa chỉ khác localhost. Không có sudo thì chỉ thấy tiến trình của bạn."
+skip.en = "Each open service is a way in. Development servers and databases bound to all interfaces are often reachable by anyone on the network."
+skip.vi = "Mỗi dịch vụ mở cổng là một lối vào. Máy chủ phát triển và cơ sở dữ liệu mở trên mọi giao diện thường bị bất kỳ ai cùng mạng truy cập."
+risk.en = "Binding a service to 127.0.0.1 or stopping it makes it unreachable from other devices, including your own phone or VPN."
+risk.vi = "Cho dịch vụ chỉ nghe 127.0.0.1 hoặc tắt nó thì thiết bị khác, kể cả điện thoại hay VPN của bạn, không truy cập được nữa."
+how.en = "For each service listed: bind it to 127.0.0.1 if only this Mac needs it, otherwise stop it. rapportd is Handoff (see the handoff item)."
+how.vi = "Với từng dịch vụ trong danh sách: cho nó chỉ nghe 127.0.0.1 nếu chỉ máy này cần dùng, không thì tắt. rapportd là Handoff (xem mục handoff)."
+
+[[check]]
+id = "launch_items"
+severity = "info"
+category = "software"
+settings = "x-apple.systempreferences:com.apple.LoginItems-Settings.extension"
+title.en = "Third-party background items reviewed"
+title.vi = "Đã rà soát tiến trình nền của bên thứ ba"
+why.en = "Lists launch agents and daemons not made by Apple. This is the most common way malware stays on a Mac after restart."
+why.vi = "Liệt kê launch agent và daemon không phải của Apple. Đây là cách mã độc hay dùng nhất để tồn tại sau khi khởi động lại."
+skip.en = "Unwanted or malicious software keeps running in the background without you noticing."
+skip.vi = "Phần mềm không mong muốn hoặc độc hại tiếp tục chạy ngầm mà bạn không hay biết."
+risk.en = "Removing an item you need stops that app's updater, sync or helper."
+risk.vi = "Gỡ một mục bạn cần sẽ làm dừng trình cập nhật, đồng bộ hoặc tiến trình phụ của app đó."
+how.en = "Review each item in System Settings > General > Login Items & Extensions and turn off what you do not recognise. BlockBlock can alert on new ones."
+how.vi = "Xem từng mục trong Cài đặt > Cài đặt chung > Mục đăng nhập & Tiện ích mở rộng và tắt mục bạn không nhận ra. BlockBlock có thể cảnh báo khi có mục mới."
+
+[[check]]
+id = "sysext"
+severity = "info"
+category = "software"
+settings = "x-apple.systempreferences:com.apple.LoginItems-Settings.extension"
+title.en = "System extensions reviewed"
+title.vi = "Đã rà soát system extension"
+why.en = "Lists active system extensions (network filters, endpoint security, drivers). They run with broad privileges."
+why.vi = "Liệt kê system extension đang chạy (lọc mạng, bảo mật đầu cuối, driver). Chúng chạy với quyền rất rộng."
+skip.en = "An extension you no longer use or do not trust can still see or change network traffic and system events."
+skip.vi = "Extension bạn không còn dùng hoặc không tin vẫn có thể xem hoặc sửa lưu lượng mạng và sự kiện hệ thống."
+risk.en = "Removing an extension disables the app that installed it (VPN, firewall, antivirus)."
+risk.vi = "Gỡ extension sẽ làm app đã cài nó (VPN, tường lửa, diệt virus) ngừng hoạt động."
+how.en = "Review them in System Settings > General > Login Items & Extensions, and uninstall the apps you do not need."
+how.vi = "Xem trong Cài đặt > Cài đặt chung > Mục đăng nhập & Tiện ích mở rộng, và gỡ app bạn không cần."
+
+[[check]]
+id = "app_runtime"
+severity = "info"
+category = "software"
+title.en = "Apps use Hardened Runtime"
+title.vi = "App dùng Hardened Runtime"
+why.en = "Lists apps in /Applications that are not built with Hardened Runtime, which blocks code injection and other runtime tampering."
+why.vi = "Liệt kê app trong /Applications không bật Hardened Runtime, cơ chế chặn chèn mã và can thiệp lúc chạy."
+skip.en = "These apps are easier for malware to hijack, for example by injecting a library."
+skip.vi = "Mã độc dễ chiếm quyền các app này hơn, ví dụ bằng cách chèn thư viện."
+risk.en = "Replacing an app with an alternative may cost features. Nothing is changed automatically."
+risk.vi = "Thay app bằng app khác có thể mất tính năng. Không có gì bị tự động thay đổi."
+how.en = "Prefer App Store or notarized versions of the listed apps, update them, or replace them with alternatives."
+how.vi = "Ưu tiên bản App Store hoặc bản đã được chứng nhận của các app trong danh sách, cập nhật chúng, hoặc thay bằng app khác."
+
+[[check]]
+id = "brew_analytics"
+severity = "low"
+category = "software"
+title.en = "Homebrew analytics are off"
+title.vi = "Tắt thống kê của Homebrew"
+why.en = "Stops Homebrew from sending anonymous usage data to its analytics server."
+why.vi = "Homebrew ngừng gửi dữ liệu sử dụng ẩn danh về máy chủ thống kê."
+skip.en = "Each install and command sends usage events about your machine."
+skip.vi = "Mỗi lần cài và chạy lệnh đều gửi sự kiện sử dụng của máy bạn đi."
+risk.en = "None for you. Homebrew maintainers get less data to prioritise work."
+risk.vi = "Không có rủi ro với bạn. Nhóm phát triển Homebrew có ít dữ liệu hơn để ưu tiên công việc."
+how.en = "Run 'brew analytics off'."
+how.vi = "Chạy 'brew analytics off'."
+fix = '''
+as_user brew analytics off
+'''
+
+[[check]]
+id = "brew_redirect"
+severity = "low"
+category = "software"
+title.en = "Homebrew refuses HTTPS to HTTP redirects"
+title.vi = "Homebrew từ chối chuyển hướng HTTPS sang HTTP"
+why.en = "Sets HOMEBREW_NO_INSECURE_REDIRECT=1 in ~/.zprofile so downloads cannot be downgraded from HTTPS to HTTP."
+why.vi = "Đặt HOMEBREW_NO_INSECURE_REDIRECT=1 trong ~/.zprofile để bản tải về không bị hạ từ HTTPS xuống HTTP."
+skip.en = "A redirect to plain HTTP lets someone on the network tamper with a download."
+skip.vi = "Một lần chuyển hướng sang HTTP thường cho phép người trong mạng sửa file đang tải."
+risk.en = "The few formulae whose upstream redirects to HTTP fail to download. Applies to new zsh sessions. Undo by removing the line from ~/.zprofile."
+risk.vi = "Vài gói có nguồn chuyển hướng sang HTTP sẽ tải lỗi. Áp dụng cho phiên zsh mới. Hoàn tác bằng cách xoá dòng đó trong ~/.zprofile."
+how.en = "Add 'export HOMEBREW_NO_INSECURE_REDIRECT=1' to your shell startup file."
+how.vi = "Thêm 'export HOMEBREW_NO_INSECURE_REDIRECT=1' vào file khởi động của shell."
+fix = '''
+as_user sh -c 'grep -qx "export HOMEBREW_NO_INSECURE_REDIRECT=1" ~/.zprofile 2>/dev/null || echo "export HOMEBREW_NO_INSECURE_REDIRECT=1" >> ~/.zprofile'
+'''
+
+[[check]]
+id = "diagnostics"
+severity = "low"
+category = "privacy"
+settings = "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+title.en = "Diagnostics & Usage data is not shared"
+title.vi = "Không chia sẻ dữ liệu chẩn đoán và sử dụng"
+why.en = "Stops sending analytics and crash data to Apple and to app developers."
+why.vi = "Ngừng gửi dữ liệu phân tích và báo lỗi về Apple và nhà phát triển app."
+skip.en = "Usage, crash and system details about your Mac are sent regularly."
+skip.vi = "Thông tin sử dụng, lỗi và cấu hình máy được gửi đi định kỳ."
+risk.en = "Apple and developers get less data to fix bugs you hit."
+risk.vi = "Apple và nhà phát triển có ít dữ liệu hơn để sửa lỗi bạn gặp."
+how.en = "System Settings > Privacy & Security > Analytics & Improvements: turn everything off."
+how.vi = "Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Phân tích & Cải tiến: tắt hết."
+fix = '''
+sudo defaults write "/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist" AutoSubmit -bool false
+sudo defaults write "/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist" ThirdPartyDataSubmit -bool false
+'''
+
+[[check]]
+id = "crash_dialog"
+severity = "low"
+category = "privacy"
+title.en = "Crash report dialog is off"
+title.vi = "Tắt hộp thoại gửi báo cáo lỗi"
+why.en = "Stops the dialog that offers to send a crash report to Apple after an app crashes."
+why.vi = "Tắt hộp thoại đề nghị gửi báo cáo lỗi cho Apple sau khi app bị treo."
+skip.en = "One accidental click sends a report that can contain details about your work."
+skip.vi = "Một cú bấm nhầm là gửi đi báo cáo có thể chứa thông tin công việc của bạn."
+risk.en = "You are no longer told when an app crashes in the background. Reports are still saved locally in Console."
+risk.vi = "Bạn không còn được báo khi app chạy nền bị treo. Báo cáo vẫn được lưu trên máy trong Console."
+how.en = "Run 'defaults write com.apple.CrashReporter DialogType none'."
+how.vi = "Chạy 'defaults write com.apple.CrashReporter DialogType none'."
+fix = '''
+as_user defaults write com.apple.CrashReporter DialogType none
+'''
+
+[[check]]
+id = "icloud_save"
+severity = "low"
+category = "privacy"
+title.en = "New documents are saved locally by default"
+title.vi = "Tài liệu mới mặc định lưu trên máy"
+why.en = "Save dialogs default to your Mac instead of iCloud Drive."
+why.vi = "Hộp thoại lưu mặc định chọn máy Mac thay vì iCloud Drive."
+skip.en = "Documents can end up in iCloud without you noticing, outside your control and, without Advanced Data Protection, readable by Apple."
+skip.vi = "Tài liệu có thể lên iCloud mà bạn không để ý, nằm ngoài tầm kiểm soát và, nếu không bật Bảo vệ dữ liệu nâng cao, Apple đọc được."
+risk.en = "New documents are not synced to other devices unless you choose iCloud Drive yourself."
+risk.vi = "Tài liệu mới không tự đồng bộ sang thiết bị khác trừ khi bạn tự chọn iCloud Drive."
+how.en = "Run 'defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false'."
+how.vi = "Chạy 'defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false'."
+fix = '''
+as_user defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
+'''
+
+[[check]]
+id = "extensions"
+severity = "low"
+category = "privacy"
+title.en = "Finder shows all filename extensions"
+title.vi = "Finder hiện mọi phần mở rộng của tên file"
+why.en = "Shows the real file type, for example 'invoice.pdf.app' instead of 'invoice.pdf'."
+why.vi = "Hiện đúng loại file, ví dụ 'hoadon.pdf.app' thay vì 'hoadon.pdf'."
+skip.en = "A malicious app or script can pose as a document."
+skip.vi = "App hoặc script độc hại có thể giả dạng tài liệu."
+risk.en = "File names look longer. Finder restarts, closing its windows."
+risk.vi = "Tên file trông dài hơn. Finder khởi động lại và đóng các cửa sổ đang mở."
+how.en = "Finder > Settings > Advanced > Show all filename extensions."
+how.vi = "Finder > Cài đặt > Nâng cao > Hiển thị tất cả phần mở rộng tên tệp."
+fix = '''
+as_user defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+as_user killall Finder
+'''
+
+[[check]]
+id = "hidden_files"
+severity = "low"
+category = "privacy"
+title.en = "Finder shows hidden files and ~/Library"
+title.vi = "Finder hiện file ẩn và thư mục ~/Library"
+why.en = "Shows hidden files and the Library folder, where background items and app data live."
+why.vi = "Hiện file ẩn và thư mục Library, nơi chứa tiến trình nền và dữ liệu app."
+skip.en = "Files dropped by malware or apps in hidden places stay out of sight."
+skip.vi = "File do mã độc hoặc app thả vào chỗ ẩn sẽ không bị nhìn thấy."
+risk.en = "Folders look busier, and it is easier to delete a system or app file by mistake. Finder restarts."
+risk.vi = "Thư mục trông rối hơn và dễ xoá nhầm file của hệ thống hoặc app. Finder sẽ khởi động lại."
+how.en = "In Finder press Command-Shift-Period, or run 'defaults write com.apple.finder AppleShowAllFiles -bool true'."
+how.vi = "Trong Finder bấm Command-Shift-Dấu chấm, hoặc chạy 'defaults write com.apple.finder AppleShowAllFiles -bool true'."
+fix = '''
+as_user defaults write com.apple.finder AppleShowAllFiles -bool true
+as_user chflags nohidden "$TARGET_HOME/Library"
+as_user killall Finder
+'''
+
+[[check]]
+id = "umask"
+severity = "low"
+category = "privacy"
+title.en = "New files are private by default (umask 077)"
+title.vi = "File mới mặc định chỉ mình bạn đọc được (umask 077)"
+why.en = "Files and folders that apps create are readable only by you, instead of by every user on the Mac."
+why.vi = "File và thư mục do app tạo ra chỉ bạn đọc được, thay vì mọi người dùng trên máy."
+skip.en = "Other accounts and services on the Mac can read most of the files you create."
+skip.vi = "Tài khoản và dịch vụ khác trên máy đọc được phần lớn file bạn tạo."
+risk.en = "Takes effect after a restart. Files you mean to share with other local users or groups need their permissions changed by hand, and a few installers expect the default. Undo: sudo launchctl config user umask 022"
+risk.vi = "Có hiệu lực sau khi khởi động lại. File muốn chia sẻ với người dùng hoặc nhóm khác trên máy phải tự đổi quyền, và vài trình cài đặt cần mặc định cũ. Hoàn tác: sudo launchctl config user umask 022"
+how.en = "Run 'sudo launchctl config user umask 077' and restart."
+how.vi = "Chạy 'sudo launchctl config user umask 077' rồi khởi động lại."
+fix = '''
+sudo launchctl config user umask 077
+'''
+
+[[check]]
+id = "terminal_keyboard"
+severity = "low"
+category = "privacy"
+title.en = "Secure Keyboard Entry in Terminal"
+title.vi = "Bật Nhập bàn phím an toàn trong Terminal"
+why.en = "Prevents other apps from reading what you type in Terminal.app, including passwords."
+why.vi = "Ngăn app khác đọc những gì bạn gõ trong Terminal.app, kể cả mật khẩu."
+skip.en = "A keylogging app with input monitoring can capture passwords typed in Terminal."
+skip.vi = "App ghi phím có quyền theo dõi đầu vào có thể bắt được mật khẩu gõ trong Terminal."
+risk.en = "Text expanders and some automation tools stop working inside Terminal. Applies after Terminal restarts. Other terminals (iTerm2, Ghostty) have their own setting."
+risk.vi = "Công cụ gõ tắt và một số công cụ tự động hoá ngừng chạy trong Terminal. Có hiệu lực khi mở lại Terminal. Terminal khác (iTerm2, Ghostty) có cài đặt riêng."
+how.en = "Terminal > Secure Keyboard Entry."
+how.vi = "Terminal > Nhập bàn phím an toàn."
+fix = '''
+as_user defaults write com.apple.Terminal SecureKeyboardEntry -bool true
+'''

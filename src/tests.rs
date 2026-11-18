@@ -11,7 +11,7 @@ fn every_definition_has_check_logic_and_back() {
     let defined: BTreeSet<String> = defs().into_iter().map(|d| d.id).collect();
     let implemented: BTreeSet<String> = IDS.iter().map(|s| s.to_string()).collect();
     assert_eq!(defined, implemented);
-    assert_eq!(defs().len(), 44);
+    assert_eq!(defs().len(), 55);
 }
 
 #[test]

@@ -245,7 +245,7 @@ pub fn check(app: &App) -> i32 {
         println!(
             " {} {} {}{}",
             ui::mark(Some(o.status), d.severity, c),
-            c.dim(&ui::pad(&d.id, 18)),
+            c.dim(&ui::pad(&d.id, ui::ID_WIDTH)),
             d.title.get(app.lang),
             detail
         );
@@ -350,7 +350,12 @@ pub fn list(app: &App) {
         println!("{}", app.colors.bold(sev.heading(app.lang)));
         for d in app.defs.iter().filter(|d| d.severity == sev) {
             let flag = if ignored.contains(&d.id) { " ⊘" } else { "" };
-            println!("  {} {}{}", ui::pad(&d.id, 18), d.title.get(app.lang), flag);
+            println!(
+                "  {} {}{}",
+                ui::pad(&d.id, ui::ID_WIDTH),
+                d.title.get(app.lang),
+                flag
+            );
         }
     }
 }

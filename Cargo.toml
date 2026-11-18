@@ -1,6 +1,6 @@
 [package]
 name = "macguard"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 rust-version = "1.80"
 description = "Audit and harden macOS from the command line, following drduh's macOS Security and Privacy Guide"

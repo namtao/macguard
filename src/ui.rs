@@ -38,6 +38,9 @@ impl Colors {
     }
 }
 
+/// Width of the item id column; fits the longest id.
+pub const ID_WIDTH: usize = 20;
+
 /// Pads plain text with spaces to a display width.
 pub fn pad(s: &str, w: usize) -> String {
     let cur = UnicodeWidthStr::width(s);

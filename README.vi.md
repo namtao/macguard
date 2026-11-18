@@ -5,10 +5,11 @@
 Công cụ dòng lệnh chạy nhanh, kiểm tra và gia cố bảo mật macOS dựa theo tài liệu
 [macOS Security and Privacy Guide](https://github.com/drduh/macOS-Security-and-Privacy-Guide) của drduh.
 
-- **44 mục kiểm**: 40 mục lấy từ các khuyến nghị kiểm được trong tài liệu (mã hoá ổ đĩa, bảo mật khởi
-  động, cập nhật, XProtect, sao lưu, đăng nhập, tường lửa, DNS, chứng chỉ, Wi-Fi, SSH, cổng đang mở, tiến
-  trình nền, system extension, Homebrew và mặc định về quyền riêng tư), 4 mục là bước gia cố phổ biến
-  mà tài liệu không nhắc. Xem [Mức độ bám sát tài liệu](#mức-độ-bám-sát-tài-liệu).
+- **55 mục kiểm**: 42 mục lấy từ các khuyến nghị kiểm được trong tài liệu (mã hoá ổ đĩa, bảo mật khởi
+  động, cập nhật, XProtect, sao lưu, đăng nhập, tường lửa, DNS, chứng chỉ, Wi-Fi, máy chủ và khoá SSH,
+  cổng đang mở, tiến trình nền, system extension, Homebrew và mặc định về quyền riêng tư), 13 mục là
+  bước gia cố phổ biến mà tài liệu không nhắc (các dịch vụ chia sẻ, sudo không mật khẩu, độ mạnh khoá
+  SSH và chuyển tiếp agent, cùng vài cài đặt đăng nhập). Xem [Mức độ bám sát tài liệu](#mức-độ-bám-sát-tài-liệu).
 - **Menu tương tác** giống lệnh `mo` của [Mole](https://github.com/tw93/Mole), xếp theo mức ưu tiên:
   cao, rồi vừa, rồi thấp, mục chưa đạt lên trước. Mở phân tích, sửa hoặc bỏ qua chỉ bằng một phím. Chỉ
   thoát khi bấm `q` hoặc Ctrl-C.
@@ -153,8 +154,8 @@ Tài liệu tham chiếu đầy đủ, gồm lệnh chính xác, tác dụng và
 | Mức | Mục |
 |---|---|
 | Cao | `filevault`, `sip`, `gatekeeper`, `firmware`, `updates`, `autologin`, `firewall` |
-| Vừa | `pending_updates`, `xprotect`, `backup`, `screenlock`, `guest`, `stealth`, `certs`, `ssh`, `ssh_password`, `screensharing`, `airplay`, `listeners` |
-| Thấp | `hint`, `admin_user`, `hostname`, `sudo_home`, `signed`, `dns`, `wifi`, `bonjour`, `handoff`, `brew_analytics`, `brew_redirect`, `diagnostics`, `crash_dialog`, `icloud_save`, `extensions`, `hidden_files`, `umask`, `terminal_keyboard` |
+| Vừa | `pending_updates`, `xprotect`, `backup`, `screenlock`, `guest`, `sudo_password`, `ssh_key_passphrase`, `ssh_host_keys`, `stealth`, `certs`, `ssh`, `ssh_password`, `screensharing`, `airplay`, `listeners`, `file_sharing`, `internet_sharing`, `remote_management`, `remote_apple_events` |
+| Thấp | `hint`, `admin_user`, `hostname`, `sudo_home`, `ssh_key_strength`, `ssh_agent_forwarding`, `signed`, `dns`, `wifi`, `bonjour`, `handoff`, `printer_sharing`, `media_sharing`, `brew_analytics`, `brew_redirect`, `diagnostics`, `crash_dialog`, `icloud_save`, `extensions`, `hidden_files`, `umask`, `terminal_keyboard` |
 | Tham khảo (không tính điểm) | `lockdown`, `outbound_fw`, `hosts_blocklist`, `bluetooth`, `launch_items`, `sysext`, `app_runtime` |
 
 Những phần của tài liệu là lời khuyên chứ không phải một cài đặt (mô hình mối đe doạ, mật khẩu và xác
@@ -163,9 +164,12 @@ thực nhiều lớp, VPN, trình duyệt, Tor, nhắn tin, luật pf, giám sá
 
 ## Mức độ bám sát tài liệu
 
-- **Lấy từ tài liệu (40 mục):** mọi mục, trừ bốn mục dưới đây, đều ứng với một khuyến nghị hoặc lệnh
-  trong tài liệu.
-- **macguard thêm vào (4 mục):** `autologin`, `guest`, `screensharing` và `airplay` không có trong tài
+- **Lấy từ tài liệu (42 mục):** mọi mục, trừ các mục dưới đây, đều ứng với một khuyến nghị hoặc lệnh
+  trong tài liệu, kể cả lời khuyên về SSH: khoá có passphrase hoặc nằm trên khoá phần cứng, và có kiểm
+  host key của máy chủ.
+- **macguard thêm vào (13 mục):** `autologin`, `guest`, `sudo_password`, `ssh_key_strength`,
+  `ssh_agent_forwarding`, `screensharing`, `airplay`, `file_sharing`, `printer_sharing`,
+  `internet_sharing`, `remote_management`, `remote_apple_events` và `media_sharing` không có trong tài
   liệu. Đây là các cài đặt nền tảng được khuyên dùng rộng rãi (bộ chuẩn CIS, hướng dẫn của Apple) và được
   ghi "macguard thêm" trong màn phân tích và trong [docs/checks.vi.md](docs/checks.vi.md).
 - **Khác cách làm, cùng mục tiêu:** tài liệu đặt mật khẩu màn hình chờ bằng
@@ -179,6 +183,8 @@ thực nhiều lớp, VPN, trình duyệt, Tor, nhắn tin, luật pf, giám sá
 ## An toàn và quyền riêng tư
 
 - `check`, `explain`, `list`, `tips` và menu chỉ đọc cài đặt, cho tới khi bạn bấm `f` và trả lời `y`.
+  Dịch vụ chia sẻ được phát hiện bằng cách thử kết nối tới cổng của nó ngay trên máy (127.0.0.1); khoá
+  SSH được kiểm bằng `ssh-keygen` và không bao giờ rời khỏi máy.
 - Khi không có terminal tương tác, mọi câu hỏi xác nhận đều là "không", nên chạy macguard qua pipe hay
   script không thể vô tình áp dụng bản sửa nào.
 - Bản sửa toàn hệ thống dùng `sudo` và sẽ hỏi mật khẩu. Bản sửa theo người dùng chạy dưới tên bạn, kể

@@ -5,10 +5,11 @@
 A fast command-line tool that audits and hardens macOS, following the
 [macOS Security and Privacy Guide](https://github.com/drduh/macOS-Security-and-Privacy-Guide) by drduh.
 
-- **44 checks**: 40 come from the guide's checkable recommendations (disk encryption, boot security,
-  updates, XProtect, backups, login, firewall, DNS, certificates, Wi-Fi, SSH, open ports, background
-  items, system extensions, Homebrew and privacy defaults) and 4 are common hardening steps the guide
-  does not cover. See [How closely it follows the guide](#how-closely-it-follows-the-guide).
+- **55 checks**: 42 come from the guide's checkable recommendations (disk encryption, boot security,
+  updates, XProtect, backups, login, firewall, DNS, certificates, Wi-Fi, SSH server and keys, open
+  ports, background items, system extensions, Homebrew and privacy defaults) and 13 are common
+  hardening steps the guide does not cover (sharing services, sudo without a password, SSH key
+  strength and agent forwarding, and a few login settings). See [How closely it follows the guide](#how-closely-it-follows-the-guide).
 - **Interactive menu** like [Mole](https://github.com/tw93/Mole)'s `mo`, sorted by priority: high,
   then medium, then low, with failing items first. Open the analysis, fix or ignore an item with one
   key. It quits only on `q` or Ctrl-C.
@@ -152,8 +153,8 @@ the code: **[docs/checks.md](docs/checks.md)** ([Tiếng Việt](docs/checks.vi.
 | Priority | Items |
 |---|---|
 | High | `filevault`, `sip`, `gatekeeper`, `firmware`, `updates`, `autologin`, `firewall` |
-| Medium | `pending_updates`, `xprotect`, `backup`, `screenlock`, `guest`, `stealth`, `certs`, `ssh`, `ssh_password`, `screensharing`, `airplay`, `listeners` |
-| Low | `hint`, `admin_user`, `hostname`, `sudo_home`, `signed`, `dns`, `wifi`, `bonjour`, `handoff`, `brew_analytics`, `brew_redirect`, `diagnostics`, `crash_dialog`, `icloud_save`, `extensions`, `hidden_files`, `umask`, `terminal_keyboard` |
+| Medium | `pending_updates`, `xprotect`, `backup`, `screenlock`, `guest`, `sudo_password`, `ssh_key_passphrase`, `ssh_host_keys`, `stealth`, `certs`, `ssh`, `ssh_password`, `screensharing`, `airplay`, `listeners`, `file_sharing`, `internet_sharing`, `remote_management`, `remote_apple_events` |
+| Low | `hint`, `admin_user`, `hostname`, `sudo_home`, `ssh_key_strength`, `ssh_agent_forwarding`, `signed`, `dns`, `wifi`, `bonjour`, `handoff`, `printer_sharing`, `media_sharing`, `brew_analytics`, `brew_redirect`, `diagnostics`, `crash_dialog`, `icloud_save`, `extensions`, `hidden_files`, `umask`, `terminal_keyboard` |
 | For review (not scored) | `lockdown`, `outbound_fw`, `hosts_blocklist`, `bluetooth`, `launch_items`, `sysext`, `app_runtime` |
 
 Parts of the guide that are advice rather than a setting (threat modelling, passwords and MFA, VPN,
@@ -161,9 +162,12 @@ browsers, Tor, messengers, pf rules, monitoring, physical access) are summarised
 
 ## How closely it follows the guide
 
-- **From the guide (40 items):** every check except the four below maps to a recommendation or
-  command in the guide.
-- **Added by macguard (4 items):** `autologin`, `guest`, `screensharing` and `airplay` are not in the
+- **From the guide (42 items):** every check except the ones below maps to a recommendation or
+  command in the guide. This includes the SSH advice: keys protected by a passphrase or a hardware
+  token, and verified server host keys.
+- **Added by macguard (13 items):** `autologin`, `guest`, `sudo_password`, `ssh_key_strength`,
+  `ssh_agent_forwarding`, `screensharing`, `airplay`, `file_sharing`, `printer_sharing`,
+  `internet_sharing`, `remote_management`, `remote_apple_events` and `media_sharing` are not in the
   guide. They are widely recommended baseline settings (CIS benchmarks, Apple's own guidance) and are
   marked "added by macguard" in the analysis and in [docs/checks.md](docs/checks.md).
 - **Different method, same goal:** the guide sets the screen-saver password with
@@ -178,6 +182,8 @@ browsers, Tor, messengers, pf rules, monitoring, physical access) are summarised
 ## Safety and privacy
 
 - `check`, `explain`, `list`, `tips` and the menu only read settings until you press `f` and answer `y`.
+  Sharing services are detected by trying to connect to their port on this Mac (127.0.0.1); SSH keys
+  are tested with `ssh-keygen` and never leave the Mac.
 - Without an interactive terminal every confirmation is "no", so piping or scripting macguard cannot
   apply a fix by accident.
 - System-wide fixes use `sudo` and prompt for your password. Per-user fixes run as you, even when

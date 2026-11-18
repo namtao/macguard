@@ -308,7 +308,7 @@ impl<'a> Menu<'a> {
         if !vis.contains(&self.sel) {
             self.sel = vis[0];
         }
-        let text_w = cols.saturating_sub(25).max(20);
+        let text_w = cols.saturating_sub(ui::ID_WIDTH + 7).max(20);
         // (line, item or None for a heading)
         let mut lines: Vec<(String, Option<usize>)> = Vec::new();
         let mut last: Option<Severity> = None;
@@ -351,15 +351,23 @@ impl<'a> Menu<'a> {
                         " {} {} {}",
                         c.bold("▸"),
                         ui::mark(status, d.severity, c),
-                        c.reverse(&format!("{} {}", ui::pad(&d.id, 18), ui::pad(&seg, text_w)))
+                        c.reverse(&format!(
+                            "{} {}",
+                            ui::pad(&d.id, ui::ID_WIDTH),
+                            ui::pad(&seg, text_w)
+                        ))
                     ),
                     (0, false) => format!(
                         "   {} {} {seg}",
                         ui::mark(status, d.severity, c),
-                        c.dim(&ui::pad(&d.id, 18))
+                        c.dim(&ui::pad(&d.id, ui::ID_WIDTH))
                     ),
-                    (_, true) => format!("{}{}", " ".repeat(24), c.reverse(&ui::pad(&seg, text_w))),
-                    (_, false) => format!("{}{seg}", " ".repeat(24)),
+                    (_, true) => format!(
+                        "{}{}",
+                        " ".repeat(ui::ID_WIDTH + 6),
+                        c.reverse(&ui::pad(&seg, text_w))
+                    ),
+                    (_, false) => format!("{}{seg}", " ".repeat(ui::ID_WIDTH + 6)),
                 };
                 lines.push((line, Some(i)));
             }

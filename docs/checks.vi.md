@@ -32,6 +32,13 @@ Các mục được nhóm theo mức độ. Mục **cao** và **vừa** ảnh h�
 | [`screensharing`](#screensharing) | Tắt Chia sẻ màn hình | Chia sẻ và cổng mở | tự động, hỏi trước | macguard thêm |
 | [`airplay`](#airplay) | Tắt Bộ thu AirPlay | Chia sẻ và cổng mở | tự động, hỏi trước | macguard thêm |
 | [`listeners`](#listeners) | Không dịch vụ nào khác mở cổng ra mạng | Chia sẻ và cổng mở | làm tay | tài liệu |
+| [`file_sharing`](#file_sharing) | Tắt Chia sẻ tệp | Chia sẻ và cổng mở | tự động, hỏi trước | macguard thêm |
+| [`internet_sharing`](#internet_sharing) | Tắt Chia sẻ Internet | Chia sẻ và cổng mở | làm tay | macguard thêm |
+| [`remote_management`](#remote_management) | Tắt Quản lý từ xa (Apple Remote Desktop) | Chia sẻ và cổng mở | tự động, hỏi trước | macguard thêm |
+| [`remote_apple_events`](#remote_apple_events) | Tắt Điều khiển ứng dụng từ xa bằng script | Chia sẻ và cổng mở | tự động, hỏi trước | macguard thêm |
+| [`sudo_password`](#sudo_password) | sudo luôn đòi mật khẩu | Tài khoản và đăng nhập | làm tay | macguard thêm |
+| [`ssh_key_passphrase`](#ssh_key_passphrase) | Khoá SSH riêng được bảo vệ bằng passphrase | Tài khoản và đăng nhập | làm tay | tài liệu |
+| [`ssh_host_keys`](#ssh_host_keys) | SSH có kiểm tra host key của máy chủ | Tài khoản và đăng nhập | làm tay | tài liệu |
 
 ## Mức thấp
 
@@ -55,6 +62,10 @@ Các mục được nhóm theo mức độ. Mục **cao** và **vừa** ảnh h�
 | [`hidden_files`](#hidden_files) | Finder hiện file ẩn và thư mục ~/Library | Quyền riêng tư | tự động, hỏi trước | tài liệu |
 | [`umask`](#umask) | File mới mặc định chỉ mình bạn đọc được (umask 077) | Quyền riêng tư | tự động, hỏi trước | tài liệu |
 | [`terminal_keyboard`](#terminal_keyboard) | Bật Nhập bàn phím an toàn trong Terminal | Quyền riêng tư | tự động, hỏi trước | tài liệu |
+| [`printer_sharing`](#printer_sharing) | Tắt Chia sẻ máy in và quản trị máy in từ xa | Chia sẻ và cổng mở | tự động, hỏi trước | macguard thêm |
+| [`media_sharing`](#media_sharing) | Tắt Chia sẻ phương tiện | Chia sẻ và cổng mở | làm tay | macguard thêm |
+| [`ssh_key_strength`](#ssh_key_strength) | Khoá SSH dùng thuật toán đủ mạnh | Tài khoản và đăng nhập | làm tay | macguard thêm |
+| [`ssh_agent_forwarding`](#ssh_agent_forwarding) | Tắt chuyển tiếp SSH agent | Tài khoản và đăng nhập | làm tay | macguard thêm |
 
 ## Tham khảo (không tính điểm)
 
@@ -381,6 +392,112 @@ sleep 3
 - **Rủi ro khi sửa:** Cho dịch vụ chỉ nghe 127.0.0.1 hoặc tắt nó thì thiết bị khác, kể cả điện thoại hay VPN của bạn, không truy cập được nữa.
 - **Nguồn:** Tài liệu macOS Security and Privacy Guide của drduh
 
+<a id="file_sharing"></a>
+
+### `file_sharing`: Tắt Chia sẻ tệp
+
+- **Mức:** vừa
+- **Nhóm:** Chia sẻ và cổng mở
+- **Tác dụng:** Tắt máy chủ tệp SMB (cổng 445) đang chia sẻ thư mục của máy ra mạng.
+- **Lệnh `macguard fix` sẽ chạy:**
+
+```bash
+sudo launchctl disable system/com.apple.smbd
+sudo launchctl bootout system/com.apple.smbd
+```
+
+- **Nếu sửa tự động không được:** Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Chia sẻ tệp: Tắt.
+- **Rủi ro nếu không sửa:** Thư mục chia sẻ có thể bị bất kỳ ai trong mạng biết hoặc đoán được mật khẩu tài khoản đọc hay sửa, và SMB là dịch vụ hay bị khai thác.
+- **Rủi ro khi sửa:** Máy khác không còn mở được thư mục trên máy này, và các Mac khác không sao lưu Time Machine vào máy này được nữa.
+- **Nguồn:** Không có trong tài liệu; macguard thêm vào như một bước gia cố phổ biến
+
+<a id="internet_sharing"></a>
+
+### `internet_sharing`: Tắt Chia sẻ Internet
+
+- **Mức:** vừa
+- **Nhóm:** Chia sẻ và cổng mở
+- **Tác dụng:** Đảm bảo máy không đóng vai router chia sẻ kết nối internet cho thiết bị khác.
+- **Cách sửa (làm tay):** Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Chia sẻ Internet: Tắt.
+- **Rủi ro nếu không sửa:** Thiết bị bạn không kiểm soát có thể đi qua máy này để vào mạng nội bộ, và lưu lượng của chúng chạy qua máy bạn.
+- **Rủi ro khi sửa:** Thiết bị đang nhờ máy này để vào internet sẽ mất kết nối.
+- **Nguồn:** Không có trong tài liệu; macguard thêm vào như một bước gia cố phổ biến
+
+<a id="remote_management"></a>
+
+### `remote_management`: Tắt Quản lý từ xa (Apple Remote Desktop)
+
+- **Mức:** vừa
+- **Nhóm:** Chia sẻ và cổng mở
+- **Tác dụng:** Tắt tác tử Apple Remote Desktop (cổng 3283), thứ cho phép quản trị viên xem, điều khiển và chạy lệnh trên máy.
+- **Lệnh `macguard fix` sẽ chạy:**
+
+```bash
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -stop
+```
+
+- **Nếu sửa tự động không được:** Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Quản lý từ xa: Tắt.
+- **Rủi ro nếu không sửa:** Ai có được một tài khoản được phép là có thể điều khiển toàn bộ máy qua mạng.
+- **Rủi ro khi sửa:** Bộ phận IT hoặc công cụ quản lý máy bằng Apple Remote Desktop không còn kết nối được. Đừng tắt trên máy công ty quản lý mà chưa hỏi.
+- **Nguồn:** Không có trong tài liệu; macguard thêm vào như một bước gia cố phổ biến
+
+<a id="remote_apple_events"></a>
+
+### `remote_apple_events`: Tắt Điều khiển ứng dụng từ xa bằng script
+
+- **Mức:** vừa
+- **Nhóm:** Chia sẻ và cổng mở
+- **Tác dụng:** Tắt Remote Apple Events (cổng 3031), thứ cho phép script trên máy khác điều khiển app trên máy này.
+- **Lệnh `macguard fix` sẽ chạy:**
+
+```bash
+sudo systemsetup -setremoteappleevents off || {
+  sudo launchctl disable system/com.apple.AEServer
+  sudo launchctl bootout system/com.apple.AEServer
+}
+```
+
+- **Nếu sửa tự động không được:** Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Điều khiển ứng dụng từ xa: Tắt.
+- **Rủi ro nếu không sửa:** Người có mật khẩu một tài khoản có thể điều khiển app của bạn từ xa, ví dụ để đọc dữ liệu hay gửi tin nhắn.
+- **Rủi ro khi sửa:** Các script AppleScript chạy từ máy khác để điều khiển máy này sẽ ngừng hoạt động.
+- **Nguồn:** Không có trong tài liệu; macguard thêm vào như một bước gia cố phổ biến
+
+<a id="sudo_password"></a>
+
+### `sudo_password`: sudo luôn đòi mật khẩu
+
+- **Mức:** vừa
+- **Nhóm:** Tài khoản và đăng nhập
+- **Tác dụng:** Tìm quy tắc NOPASSWD trong /etc/sudoers và /etc/sudoers.d, thứ cho phép chạy lệnh quyền root mà không cần gõ mật khẩu.
+- **Cách sửa (làm tay):** Chạy 'sudo visudo' (và 'sudo visudo -f' cho từng file trong /etc/sudoers.d) rồi xoá hoặc thu hẹp các quy tắc NOPASSWD được liệt kê.
+- **Rủi ro nếu không sửa:** Bất kỳ chương trình nào chạy dưới tên bạn, kể cả mã độc, đều có thể âm thầm lên quyền root.
+- **Rủi ro khi sửa:** Script hoặc công cụ đang dựa vào sudo không mật khẩu sẽ dừng lại và hỏi mật khẩu.
+- **Nguồn:** Không có trong tài liệu; macguard thêm vào như một bước gia cố phổ biến
+
+<a id="ssh_key_passphrase"></a>
+
+### `ssh_key_passphrase`: Khoá SSH riêng được bảo vệ bằng passphrase
+
+- **Mức:** vừa
+- **Nhóm:** Tài khoản và đăng nhập
+- **Tác dụng:** Kiểm mọi khoá riêng trong ~/.ssh. Khoá nằm trên thiết bị phần cứng (sk-...) được tính là đã bảo vệ.
+- **Cách sửa (làm tay):** Với từng khoá trong danh sách, chạy 'ssh-keygen -p -f ~/.ssh/<khoá>' và đặt passphrase.
+- **Rủi ro nếu không sửa:** Ai sao chép được file khoá, ví dụ từ bản sao lưu hoặc qua mã độc, là đăng nhập được vào mọi máy chủ tin khoá đó.
+- **Rủi ro khi sửa:** Bạn phải gõ passphrase khi dùng khoá. Thêm vào keychain của macOS bằng 'ssh-add --apple-use-keychain' để không phải gõ mỗi lần.
+- **Nguồn:** Tài liệu macOS Security and Privacy Guide của drduh
+
+<a id="ssh_host_keys"></a>
+
+### `ssh_host_keys`: SSH có kiểm tra host key của máy chủ
+
+- **Mức:** vừa
+- **Nhóm:** Tài khoản và đăng nhập
+- **Tác dụng:** Tìm 'StrictHostKeyChecking no' hoặc 'UserKnownHostsFile /dev/null' trong ~/.ssh/config và /etc/ssh/ssh_config, những dòng tắt việc xác minh máy chủ.
+- **Cách sửa (làm tay):** Xoá các dòng đó, hoặc chỉ dùng cho một máy thử nghiệm cụ thể thay vì 'Host *'.
+- **Rủi ro nếu không sửa:** Người trong mạng có thể giả làm máy chủ và đọc được những gì bạn gửi, kể cả mật khẩu và mã nguồn.
+- **Rủi ro khi sửa:** SSH sẽ hỏi bạn xác nhận khoá của máy chủ ở lần kết nối đầu, và cảnh báo nếu khoá đó thay đổi về sau.
+- **Nguồn:** Tài liệu macOS Security and Privacy Guide của drduh
+
 <a id="hint"></a>
 
 ### `hint`: Không hiện gợi ý mật khẩu
@@ -702,6 +819,60 @@ defaults write com.apple.Terminal SecureKeyboardEntry -bool true
 - **Rủi ro nếu không sửa:** App ghi phím có quyền theo dõi đầu vào có thể bắt được mật khẩu gõ trong Terminal.
 - **Rủi ro khi sửa:** Công cụ gõ tắt và một số công cụ tự động hoá ngừng chạy trong Terminal. Có hiệu lực khi mở lại Terminal. Terminal khác (iTerm2, Ghostty) có cài đặt riêng.
 - **Nguồn:** Tài liệu macOS Security and Privacy Guide của drduh
+
+<a id="printer_sharing"></a>
+
+### `printer_sharing`: Tắt Chia sẻ máy in và quản trị máy in từ xa
+
+- **Mức:** thấp
+- **Nhóm:** Chia sẻ và cổng mở
+- **Tác dụng:** CUPS, hệ thống in của máy, ngừng chia sẻ máy in và ngừng nhận lệnh quản trị hay lệnh in từ máy khác.
+- **Lệnh `macguard fix` sẽ chạy:**
+
+```bash
+sudo cupsctl --no-share-printers --no-remote-admin --no-remote-any
+```
+
+- **Nếu sửa tự động không được:** Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Chia sẻ máy in: Tắt.
+- **Rủi ro nếu không sửa:** Máy khác gửi lệnh in tới máy in của bạn hoặc truy cập giao diện web của CUPS được, nơi từng có lỗ hổng khai thác từ xa.
+- **Rủi ro khi sửa:** Máy in cắm vào máy này không còn dùng chung được với máy khác.
+- **Nguồn:** Không có trong tài liệu; macguard thêm vào như một bước gia cố phổ biến
+
+<a id="media_sharing"></a>
+
+### `media_sharing`: Tắt Chia sẻ phương tiện
+
+- **Mức:** thấp
+- **Nhóm:** Chia sẻ và cổng mở
+- **Tác dụng:** Ngừng chia sẻ thư viện nhạc và video với thiết bị khác trong mạng (cổng 3689).
+- **Cách sửa (làm tay):** Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Chia sẻ phương tiện: Tắt.
+- **Rủi ro nếu không sửa:** Thiết bị cùng mạng có thể xem thư viện nhạc, video và suy ra thông tin về bạn.
+- **Rủi ro khi sửa:** Apple TV và máy khác không còn phát được nội dung từ máy này.
+- **Nguồn:** Không có trong tài liệu; macguard thêm vào như một bước gia cố phổ biến
+
+<a id="ssh_key_strength"></a>
+
+### `ssh_key_strength`: Khoá SSH dùng thuật toán đủ mạnh
+
+- **Mức:** thấp
+- **Nhóm:** Tài khoản và đăng nhập
+- **Tác dụng:** Đánh dấu khoá DSA và khoá RSA ngắn hơn 3072 bit. Khoá Ed25519, ECDSA và khoá trên thiết bị phần cứng được tính là đạt.
+- **Cách sửa (làm tay):** Tạo khoá mới bằng 'ssh-keygen -t ed25519', thêm vào các máy chủ và dịch vụ, rồi bỏ khoá cũ.
+- **Rủi ro nếu không sửa:** Khoá yếu dễ bị phá hơn và ngày càng nhiều máy chủ từ chối.
+- **Rủi ro khi sửa:** Phải thêm khoá mới vào mọi máy chủ và dịch vụ đang tin khoá cũ trước khi bỏ khoá cũ.
+- **Nguồn:** Không có trong tài liệu; macguard thêm vào như một bước gia cố phổ biến
+
+<a id="ssh_agent_forwarding"></a>
+
+### `ssh_agent_forwarding`: Tắt chuyển tiếp SSH agent
+
+- **Mức:** thấp
+- **Nhóm:** Tài khoản và đăng nhập
+- **Tác dụng:** Tìm 'ForwardAgent yes' trong ~/.ssh/config và /etc/ssh/ssh_config.
+- **Cách sửa (làm tay):** Xoá 'ForwardAgent yes', hoặc chỉ bật cho một máy chủ cụ thể bạn tin cậy.
+- **Rủi ro nếu không sửa:** Quản trị viên hoặc kẻ tấn công trên máy chủ bạn kết nối có thể dùng khoá của bạn để đăng nhập nơi khác dưới tên bạn khi phiên còn mở.
+- **Rủi ro khi sửa:** Việc nhảy từ máy chủ này sang máy chủ khác bằng khoá trên máy bạn sẽ không chạy nữa. Hãy dùng 'ssh -J' (ProxyJump), cách này không lộ agent.
+- **Nguồn:** Không có trong tài liệu; macguard thêm vào như một bước gia cố phổ biến
 
 <a id="lockdown"></a>
 

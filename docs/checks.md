@@ -32,6 +32,13 @@ Items are grouped by severity. **High** and **medium** items affect the exit cod
 | [`screensharing`](#screensharing) | Screen Sharing is off | Sharing and open ports | automatic, asks first | added by macguard |
 | [`airplay`](#airplay) | AirPlay Receiver is off | Sharing and open ports | automatic, asks first | added by macguard |
 | [`listeners`](#listeners) | No other service listens on the network | Sharing and open ports | manual | guide |
+| [`file_sharing`](#file_sharing) | File Sharing is off | Sharing and open ports | automatic, asks first | added by macguard |
+| [`internet_sharing`](#internet_sharing) | Internet Sharing is off | Sharing and open ports | manual | added by macguard |
+| [`remote_management`](#remote_management) | Remote Management (Apple Remote Desktop) is off | Sharing and open ports | automatic, asks first | added by macguard |
+| [`remote_apple_events`](#remote_apple_events) | Remote Application Scripting is off | Sharing and open ports | automatic, asks first | added by macguard |
+| [`sudo_password`](#sudo_password) | sudo always asks for a password | Accounts and login | manual | added by macguard |
+| [`ssh_key_passphrase`](#ssh_key_passphrase) | SSH private keys are protected by a passphrase | Accounts and login | manual | guide |
+| [`ssh_host_keys`](#ssh_host_keys) | SSH verifies server host keys | Accounts and login | manual | guide |
 
 ## Low priority
 
@@ -55,6 +62,10 @@ Items are grouped by severity. **High** and **medium** items affect the exit cod
 | [`hidden_files`](#hidden_files) | Finder shows hidden files and ~/Library | Privacy | automatic, asks first | guide |
 | [`umask`](#umask) | New files are private by default (umask 077) | Privacy | automatic, asks first | guide |
 | [`terminal_keyboard`](#terminal_keyboard) | Secure Keyboard Entry in Terminal | Privacy | automatic, asks first | guide |
+| [`printer_sharing`](#printer_sharing) | Printer Sharing and remote printer administration are off | Sharing and open ports | automatic, asks first | added by macguard |
+| [`media_sharing`](#media_sharing) | Media Sharing is off | Sharing and open ports | manual | added by macguard |
+| [`ssh_key_strength`](#ssh_key_strength) | SSH keys use strong algorithms | Accounts and login | manual | added by macguard |
+| [`ssh_agent_forwarding`](#ssh_agent_forwarding) | SSH agent forwarding is off | Accounts and login | manual | added by macguard |
 
 ## For review (not scored)
 
@@ -381,6 +392,112 @@ sleep 3
 - **Risk when you fix it:** Binding a service to 127.0.0.1 or stopping it makes it unreachable from other devices, including your own phone or VPN.
 - **Source:** drduh macOS Security and Privacy Guide
 
+<a id="file_sharing"></a>
+
+### `file_sharing`: File Sharing is off
+
+- **Severity:** medium
+- **Area:** Sharing and open ports
+- **What it does:** Turns off the SMB file server (port 445) that shares folders of this Mac with the network.
+- **Command `macguard fix` runs:**
+
+```bash
+sudo launchctl disable system/com.apple.smbd
+sudo launchctl bootout system/com.apple.smbd
+```
+
+- **If the automatic fix fails:** System Settings > General > Sharing > File Sharing: Off.
+- **Risk if you do not fix it:** Shared folders can be read or changed by anyone on the network who knows or guesses an account password, and SMB is a frequent focus of exploits.
+- **Risk when you fix it:** Other computers can no longer open folders on this Mac, and other Macs can no longer back up to it with Time Machine.
+- **Source:** Not in the guide; common hardening added by macguard
+
+<a id="internet_sharing"></a>
+
+### `internet_sharing`: Internet Sharing is off
+
+- **Severity:** medium
+- **Area:** Sharing and open ports
+- **What it does:** Makes sure this Mac is not acting as a router that shares its internet connection with other devices.
+- **How to fix (manual):** System Settings > General > Sharing > Internet Sharing: Off.
+- **Risk if you do not fix it:** Devices you do not control can join through this Mac and reach your local network, and their traffic passes through it.
+- **Risk when you fix it:** Devices that rely on this Mac for internet access lose their connection.
+- **Source:** Not in the guide; common hardening added by macguard
+
+<a id="remote_management"></a>
+
+### `remote_management`: Remote Management (Apple Remote Desktop) is off
+
+- **Severity:** medium
+- **Area:** Sharing and open ports
+- **What it does:** Turns off the Apple Remote Desktop agent (port 3283), which lets an administrator observe, control and run commands on this Mac.
+- **Command `macguard fix` runs:**
+
+```bash
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -stop
+```
+
+- **If the automatic fix fails:** System Settings > General > Sharing > Remote Management: Off.
+- **Risk if you do not fix it:** Anyone who obtains a permitted account can take full control of the Mac over the network.
+- **Risk when you fix it:** IT staff or tools that manage this Mac with Apple Remote Desktop can no longer reach it. Do not turn it off on a company-managed Mac without asking.
+- **Source:** Not in the guide; common hardening added by macguard
+
+<a id="remote_apple_events"></a>
+
+### `remote_apple_events`: Remote Application Scripting is off
+
+- **Severity:** medium
+- **Area:** Sharing and open ports
+- **What it does:** Turns off Remote Apple Events (port 3031), which let scripts on other computers control apps on this Mac.
+- **Command `macguard fix` runs:**
+
+```bash
+sudo systemsetup -setremoteappleevents off || {
+  sudo launchctl disable system/com.apple.AEServer
+  sudo launchctl bootout system/com.apple.AEServer
+}
+```
+
+- **If the automatic fix fails:** System Settings > General > Sharing > Remote Application Scripting: Off.
+- **Risk if you do not fix it:** Someone with an account password can drive your apps remotely, for example to read data or send messages.
+- **Risk when you fix it:** AppleScript automation that controls this Mac from another computer stops working.
+- **Source:** Not in the guide; common hardening added by macguard
+
+<a id="sudo_password"></a>
+
+### `sudo_password`: sudo always asks for a password
+
+- **Severity:** medium
+- **Area:** Accounts and login
+- **What it does:** Looks for NOPASSWD rules in /etc/sudoers and /etc/sudoers.d, which let commands run as root without typing a password.
+- **How to fix (manual):** Run 'sudo visudo' (and 'sudo visudo -f' for each file in /etc/sudoers.d) and remove or narrow the NOPASSWD rules listed.
+- **Risk if you do not fix it:** Any program running as you, including malware, can become root silently.
+- **Risk when you fix it:** Scripts or tools that relied on password-less sudo will stop and ask for a password.
+- **Source:** Not in the guide; common hardening added by macguard
+
+<a id="ssh_key_passphrase"></a>
+
+### `ssh_key_passphrase`: SSH private keys are protected by a passphrase
+
+- **Severity:** medium
+- **Area:** Accounts and login
+- **What it does:** Checks every private key in ~/.ssh. Keys on a hardware token (sk-...) count as protected.
+- **How to fix (manual):** For each key listed, run 'ssh-keygen -p -f ~/.ssh/<key>' and set a passphrase.
+- **Risk if you do not fix it:** Anyone who copies the key file, for example from a backup or through malware, can log in to every server that trusts it.
+- **Risk when you fix it:** You type the passphrase when the key is used. Add it to the macOS keychain with 'ssh-add --apple-use-keychain' to avoid typing it every time.
+- **Source:** drduh macOS Security and Privacy Guide
+
+<a id="ssh_host_keys"></a>
+
+### `ssh_host_keys`: SSH verifies server host keys
+
+- **Severity:** medium
+- **Area:** Accounts and login
+- **What it does:** Looks for 'StrictHostKeyChecking no' or 'UserKnownHostsFile /dev/null' in ~/.ssh/config and /etc/ssh/ssh_config, which turn off server verification.
+- **How to fix (manual):** Remove those lines, or limit them to a specific test host instead of 'Host *'.
+- **Risk if you do not fix it:** Someone on the network can impersonate a server and capture what you send, including passwords and code.
+- **Risk when you fix it:** SSH asks you to confirm a server's key the first time you connect, and warns if it later changes.
+- **Source:** drduh macOS Security and Privacy Guide
+
 <a id="hint"></a>
 
 ### `hint`: Password hints are not shown
@@ -702,6 +819,60 @@ defaults write com.apple.Terminal SecureKeyboardEntry -bool true
 - **Risk if you do not fix it:** A keylogging app with input monitoring can capture passwords typed in Terminal.
 - **Risk when you fix it:** Text expanders and some automation tools stop working inside Terminal. Applies after Terminal restarts. Other terminals (iTerm2, Ghostty) have their own setting.
 - **Source:** drduh macOS Security and Privacy Guide
+
+<a id="printer_sharing"></a>
+
+### `printer_sharing`: Printer Sharing and remote printer administration are off
+
+- **Severity:** low
+- **Area:** Sharing and open ports
+- **What it does:** Stops CUPS, the printing system, from sharing printers and accepting administration or print jobs from other computers.
+- **Command `macguard fix` runs:**
+
+```bash
+sudo cupsctl --no-share-printers --no-remote-admin --no-remote-any
+```
+
+- **If the automatic fix fails:** System Settings > General > Sharing > Printer Sharing: Off.
+- **Risk if you do not fix it:** Other computers can send jobs to your printers or reach the CUPS web interface, which has had remote vulnerabilities.
+- **Risk when you fix it:** Printers connected to this Mac are no longer available to other computers.
+- **Source:** Not in the guide; common hardening added by macguard
+
+<a id="media_sharing"></a>
+
+### `media_sharing`: Media Sharing is off
+
+- **Severity:** low
+- **Area:** Sharing and open ports
+- **What it does:** Stops sharing your music and video library with other devices on the network (port 3689).
+- **How to fix (manual):** System Settings > General > Sharing > Media Sharing: Off.
+- **Risk if you do not fix it:** Devices on the same network can browse your media library and learn about you from it.
+- **Risk when you fix it:** Apple TV and other computers can no longer play media from this Mac.
+- **Source:** Not in the guide; common hardening added by macguard
+
+<a id="ssh_key_strength"></a>
+
+### `ssh_key_strength`: SSH keys use strong algorithms
+
+- **Severity:** low
+- **Area:** Accounts and login
+- **What it does:** Flags DSA keys and RSA keys shorter than 3072 bits. Ed25519, ECDSA and hardware-token keys pass.
+- **How to fix (manual):** Create a new key with 'ssh-keygen -t ed25519', add it to your servers and services, then remove the old key.
+- **Risk if you do not fix it:** Weak keys are easier to break and are being refused by more and more servers.
+- **Risk when you fix it:** A new key must be added to every server and service that trusts the old one before the old key is removed.
+- **Source:** Not in the guide; common hardening added by macguard
+
+<a id="ssh_agent_forwarding"></a>
+
+### `ssh_agent_forwarding`: SSH agent forwarding is off
+
+- **Severity:** low
+- **Area:** Accounts and login
+- **What it does:** Looks for 'ForwardAgent yes' in ~/.ssh/config and /etc/ssh/ssh_config.
+- **How to fix (manual):** Remove 'ForwardAgent yes', or allow it only for a specific trusted host.
+- **Risk if you do not fix it:** An administrator or attacker on a server you connect to can use your keys to log in elsewhere as you while the session is open.
+- **Risk when you fix it:** Hopping from one server to another with your local keys stops working. Use 'ssh -J' (ProxyJump) instead, which does not expose the agent.
+- **Source:** Not in the guide; common hardening added by macguard
 
 <a id="lockdown"></a>
 

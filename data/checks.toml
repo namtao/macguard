@@ -800,3 +800,207 @@ how.vi = "Terminal > Nhập bàn phím an toàn."
 fix = '''
 as_user defaults write com.apple.Terminal SecureKeyboardEntry -bool true
 '''
+
+# ---------------------------------------------------------------------------
+# Sharing services. Not in the guide; common hardening (CIS, Apple guidance).
+# Detected by trying to connect to the service's port on this Mac, which also
+# sees services started by launchd without needing root.
+
+[[check]]
+id = "file_sharing"
+severity = "med"
+category = "sharing"
+extra = true
+settings = "x-apple.systempreferences:com.apple.Sharing-Settings.extension"
+title.en = "File Sharing is off"
+title.vi = "Tắt Chia sẻ tệp"
+why.en = "Turns off the SMB file server (port 445) that shares folders of this Mac with the network."
+why.vi = "Tắt máy chủ tệp SMB (cổng 445) đang chia sẻ thư mục của máy ra mạng."
+skip.en = "Shared folders can be read or changed by anyone on the network who knows or guesses an account password, and SMB is a frequent focus of exploits."
+skip.vi = "Thư mục chia sẻ có thể bị bất kỳ ai trong mạng biết hoặc đoán được mật khẩu tài khoản đọc hay sửa, và SMB là dịch vụ hay bị khai thác."
+risk.en = "Other computers can no longer open folders on this Mac, and other Macs can no longer back up to it with Time Machine."
+risk.vi = "Máy khác không còn mở được thư mục trên máy này, và các Mac khác không sao lưu Time Machine vào máy này được nữa."
+how.en = "System Settings > General > Sharing > File Sharing: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Chia sẻ tệp: Tắt."
+fix = '''
+sudo launchctl disable system/com.apple.smbd
+sudo launchctl bootout system/com.apple.smbd
+'''
+
+[[check]]
+id = "printer_sharing"
+severity = "low"
+category = "sharing"
+extra = true
+settings = "x-apple.systempreferences:com.apple.Sharing-Settings.extension"
+title.en = "Printer Sharing and remote printer administration are off"
+title.vi = "Tắt Chia sẻ máy in và quản trị máy in từ xa"
+why.en = "Stops CUPS, the printing system, from sharing printers and accepting administration or print jobs from other computers."
+why.vi = "CUPS, hệ thống in của máy, ngừng chia sẻ máy in và ngừng nhận lệnh quản trị hay lệnh in từ máy khác."
+skip.en = "Other computers can send jobs to your printers or reach the CUPS web interface, which has had remote vulnerabilities."
+skip.vi = "Máy khác gửi lệnh in tới máy in của bạn hoặc truy cập giao diện web của CUPS được, nơi từng có lỗ hổng khai thác từ xa."
+risk.en = "Printers connected to this Mac are no longer available to other computers."
+risk.vi = "Máy in cắm vào máy này không còn dùng chung được với máy khác."
+how.en = "System Settings > General > Sharing > Printer Sharing: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Chia sẻ máy in: Tắt."
+fix = '''
+sudo cupsctl --no-share-printers --no-remote-admin --no-remote-any
+'''
+
+[[check]]
+id = "internet_sharing"
+severity = "med"
+category = "sharing"
+extra = true
+settings = "x-apple.systempreferences:com.apple.Sharing-Settings.extension"
+title.en = "Internet Sharing is off"
+title.vi = "Tắt Chia sẻ Internet"
+why.en = "Makes sure this Mac is not acting as a router that shares its internet connection with other devices."
+why.vi = "Đảm bảo máy không đóng vai router chia sẻ kết nối internet cho thiết bị khác."
+skip.en = "Devices you do not control can join through this Mac and reach your local network, and their traffic passes through it."
+skip.vi = "Thiết bị bạn không kiểm soát có thể đi qua máy này để vào mạng nội bộ, và lưu lượng của chúng chạy qua máy bạn."
+risk.en = "Devices that rely on this Mac for internet access lose their connection."
+risk.vi = "Thiết bị đang nhờ máy này để vào internet sẽ mất kết nối."
+how.en = "System Settings > General > Sharing > Internet Sharing: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Chia sẻ Internet: Tắt."
+
+[[check]]
+id = "remote_management"
+severity = "med"
+category = "sharing"
+extra = true
+settings = "x-apple.systempreferences:com.apple.Sharing-Settings.extension"
+title.en = "Remote Management (Apple Remote Desktop) is off"
+title.vi = "Tắt Quản lý từ xa (Apple Remote Desktop)"
+why.en = "Turns off the Apple Remote Desktop agent (port 3283), which lets an administrator observe, control and run commands on this Mac."
+why.vi = "Tắt tác tử Apple Remote Desktop (cổng 3283), thứ cho phép quản trị viên xem, điều khiển và chạy lệnh trên máy."
+skip.en = "Anyone who obtains a permitted account can take full control of the Mac over the network."
+skip.vi = "Ai có được một tài khoản được phép là có thể điều khiển toàn bộ máy qua mạng."
+risk.en = "IT staff or tools that manage this Mac with Apple Remote Desktop can no longer reach it. Do not turn it off on a company-managed Mac without asking."
+risk.vi = "Bộ phận IT hoặc công cụ quản lý máy bằng Apple Remote Desktop không còn kết nối được. Đừng tắt trên máy công ty quản lý mà chưa hỏi."
+how.en = "System Settings > General > Sharing > Remote Management: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Quản lý từ xa: Tắt."
+fix = '''
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -stop
+'''
+
+[[check]]
+id = "remote_apple_events"
+severity = "med"
+category = "sharing"
+extra = true
+settings = "x-apple.systempreferences:com.apple.Sharing-Settings.extension"
+title.en = "Remote Application Scripting is off"
+title.vi = "Tắt Điều khiển ứng dụng từ xa bằng script"
+why.en = "Turns off Remote Apple Events (port 3031), which let scripts on other computers control apps on this Mac."
+why.vi = "Tắt Remote Apple Events (cổng 3031), thứ cho phép script trên máy khác điều khiển app trên máy này."
+skip.en = "Someone with an account password can drive your apps remotely, for example to read data or send messages."
+skip.vi = "Người có mật khẩu một tài khoản có thể điều khiển app của bạn từ xa, ví dụ để đọc dữ liệu hay gửi tin nhắn."
+risk.en = "AppleScript automation that controls this Mac from another computer stops working."
+risk.vi = "Các script AppleScript chạy từ máy khác để điều khiển máy này sẽ ngừng hoạt động."
+how.en = "System Settings > General > Sharing > Remote Application Scripting: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Điều khiển ứng dụng từ xa: Tắt."
+fix = '''
+sudo systemsetup -setremoteappleevents off || {
+  sudo launchctl disable system/com.apple.AEServer
+  sudo launchctl bootout system/com.apple.AEServer
+}
+'''
+
+[[check]]
+id = "media_sharing"
+severity = "low"
+category = "sharing"
+extra = true
+settings = "x-apple.systempreferences:com.apple.Sharing-Settings.extension"
+title.en = "Media Sharing is off"
+title.vi = "Tắt Chia sẻ phương tiện"
+why.en = "Stops sharing your music and video library with other devices on the network (port 3689)."
+why.vi = "Ngừng chia sẻ thư viện nhạc và video với thiết bị khác trong mạng (cổng 3689)."
+skip.en = "Devices on the same network can browse your media library and learn about you from it."
+skip.vi = "Thiết bị cùng mạng có thể xem thư viện nhạc, video và suy ra thông tin về bạn."
+risk.en = "Apple TV and other computers can no longer play media from this Mac."
+risk.vi = "Apple TV và máy khác không còn phát được nội dung từ máy này."
+how.en = "System Settings > General > Sharing > Media Sharing: Off."
+how.vi = "Cài đặt hệ thống > Cài đặt chung > Chia sẻ > Chia sẻ phương tiện: Tắt."
+
+# ---------------------------------------------------------------------------
+# sudo and SSH
+
+[[check]]
+id = "sudo_password"
+severity = "med"
+category = "accounts"
+extra = true
+title.en = "sudo always asks for a password"
+title.vi = "sudo luôn đòi mật khẩu"
+why.en = "Looks for NOPASSWD rules in /etc/sudoers and /etc/sudoers.d, which let commands run as root without typing a password."
+why.vi = "Tìm quy tắc NOPASSWD trong /etc/sudoers và /etc/sudoers.d, thứ cho phép chạy lệnh quyền root mà không cần gõ mật khẩu."
+skip.en = "Any program running as you, including malware, can become root silently."
+skip.vi = "Bất kỳ chương trình nào chạy dưới tên bạn, kể cả mã độc, đều có thể âm thầm lên quyền root."
+risk.en = "Scripts or tools that relied on password-less sudo will stop and ask for a password."
+risk.vi = "Script hoặc công cụ đang dựa vào sudo không mật khẩu sẽ dừng lại và hỏi mật khẩu."
+how.en = "Run 'sudo visudo' (and 'sudo visudo -f' for each file in /etc/sudoers.d) and remove or narrow the NOPASSWD rules listed."
+how.vi = "Chạy 'sudo visudo' (và 'sudo visudo -f' cho từng file trong /etc/sudoers.d) rồi xoá hoặc thu hẹp các quy tắc NOPASSWD được liệt kê."
+
+[[check]]
+id = "ssh_key_passphrase"
+severity = "med"
+category = "accounts"
+title.en = "SSH private keys are protected by a passphrase"
+title.vi = "Khoá SSH riêng được bảo vệ bằng passphrase"
+why.en = "Checks every private key in ~/.ssh. Keys on a hardware token (sk-...) count as protected."
+why.vi = "Kiểm mọi khoá riêng trong ~/.ssh. Khoá nằm trên thiết bị phần cứng (sk-...) được tính là đã bảo vệ."
+skip.en = "Anyone who copies the key file, for example from a backup or through malware, can log in to every server that trusts it."
+skip.vi = "Ai sao chép được file khoá, ví dụ từ bản sao lưu hoặc qua mã độc, là đăng nhập được vào mọi máy chủ tin khoá đó."
+risk.en = "You type the passphrase when the key is used. Add it to the macOS keychain with 'ssh-add --apple-use-keychain' to avoid typing it every time."
+risk.vi = "Bạn phải gõ passphrase khi dùng khoá. Thêm vào keychain của macOS bằng 'ssh-add --apple-use-keychain' để không phải gõ mỗi lần."
+how.en = "For each key listed, run 'ssh-keygen -p -f ~/.ssh/<key>' and set a passphrase."
+how.vi = "Với từng khoá trong danh sách, chạy 'ssh-keygen -p -f ~/.ssh/<khoá>' và đặt passphrase."
+
+[[check]]
+id = "ssh_key_strength"
+severity = "low"
+category = "accounts"
+extra = true
+title.en = "SSH keys use strong algorithms"
+title.vi = "Khoá SSH dùng thuật toán đủ mạnh"
+why.en = "Flags DSA keys and RSA keys shorter than 3072 bits. Ed25519, ECDSA and hardware-token keys pass."
+why.vi = "Đánh dấu khoá DSA và khoá RSA ngắn hơn 3072 bit. Khoá Ed25519, ECDSA và khoá trên thiết bị phần cứng được tính là đạt."
+skip.en = "Weak keys are easier to break and are being refused by more and more servers."
+skip.vi = "Khoá yếu dễ bị phá hơn và ngày càng nhiều máy chủ từ chối."
+risk.en = "A new key must be added to every server and service that trusts the old one before the old key is removed."
+risk.vi = "Phải thêm khoá mới vào mọi máy chủ và dịch vụ đang tin khoá cũ trước khi bỏ khoá cũ."
+how.en = "Create a new key with 'ssh-keygen -t ed25519', add it to your servers and services, then remove the old key."
+how.vi = "Tạo khoá mới bằng 'ssh-keygen -t ed25519', thêm vào các máy chủ và dịch vụ, rồi bỏ khoá cũ."
+
+[[check]]
+id = "ssh_host_keys"
+severity = "med"
+category = "accounts"
+title.en = "SSH verifies server host keys"
+title.vi = "SSH có kiểm tra host key của máy chủ"
+why.en = "Looks for 'StrictHostKeyChecking no' or 'UserKnownHostsFile /dev/null' in ~/.ssh/config and /etc/ssh/ssh_config, which turn off server verification."
+why.vi = "Tìm 'StrictHostKeyChecking no' hoặc 'UserKnownHostsFile /dev/null' trong ~/.ssh/config và /etc/ssh/ssh_config, những dòng tắt việc xác minh máy chủ."
+skip.en = "Someone on the network can impersonate a server and capture what you send, including passwords and code."
+skip.vi = "Người trong mạng có thể giả làm máy chủ và đọc được những gì bạn gửi, kể cả mật khẩu và mã nguồn."
+risk.en = "SSH asks you to confirm a server's key the first time you connect, and warns if it later changes."
+risk.vi = "SSH sẽ hỏi bạn xác nhận khoá của máy chủ ở lần kết nối đầu, và cảnh báo nếu khoá đó thay đổi về sau."
+how.en = "Remove those lines, or limit them to a specific test host instead of 'Host *'."
+how.vi = "Xoá các dòng đó, hoặc chỉ dùng cho một máy thử nghiệm cụ thể thay vì 'Host *'."
+
+[[check]]
+id = "ssh_agent_forwarding"
+severity = "low"
+category = "accounts"
+extra = true
+title.en = "SSH agent forwarding is off"
+title.vi = "Tắt chuyển tiếp SSH agent"
+why.en = "Looks for 'ForwardAgent yes' in ~/.ssh/config and /etc/ssh/ssh_config."
+why.vi = "Tìm 'ForwardAgent yes' trong ~/.ssh/config và /etc/ssh/ssh_config."
+skip.en = "An administrator or attacker on a server you connect to can use your keys to log in elsewhere as you while the session is open."
+skip.vi = "Quản trị viên hoặc kẻ tấn công trên máy chủ bạn kết nối có thể dùng khoá của bạn để đăng nhập nơi khác dưới tên bạn khi phiên còn mở."
+risk.en = "Hopping from one server to another with your local keys stops working. Use 'ssh -J' (ProxyJump) instead, which does not expose the agent."
+risk.vi = "Việc nhảy từ máy chủ này sang máy chủ khác bằng khoá trên máy bạn sẽ không chạy nữa. Hãy dùng 'ssh -J' (ProxyJump), cách này không lộ agent."
+how.en = "Remove 'ForwardAgent yes', or allow it only for a specific trusted host."
+how.vi = "Xoá 'ForwardAgent yes', hoặc chỉ bật cho một máy chủ cụ thể bạn tin cậy."

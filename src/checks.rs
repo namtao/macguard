@@ -87,7 +87,7 @@ impl Ctx {
     }
 
     /// Runs a command as the audited user (via sudo -u when running as root).
-    fn as_user_status(&self, prog: &str, args: &[&str]) -> (bool, String) {
+    pub(crate) fn as_user_status(&self, prog: &str, args: &[&str]) -> (bool, String) {
         if self.root && self.user != "root" {
             let mut all = vec!["-H", "-u", self.user.as_str(), prog];
             all.extend_from_slice(args);
@@ -264,10 +264,96 @@ pub const IDS: &[&str] = &[
     "hidden_files",
     "umask",
     "terminal_keyboard",
+    "file_sharing",
+    "printer_sharing",
+    "internet_sharing",
+    "remote_management",
+    "remote_apple_events",
+    "media_sharing",
+    "sudo_password",
+    "ssh_key_passphrase",
+    "ssh_key_strength",
+    "ssh_host_keys",
+    "ssh_agent_forwarding",
 ];
 
 fn ssh_on() -> bool {
     run_status("launchctl", &["print", "system/com.openssh.sshd"]).0
+}
+
+/// True when something accepts TCP connections on this port of this Mac. Unlike
+/// lsof, this also sees services that launchd listens for, without root.
+fn port_open(port: u16) -> bool {
+    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(300)).is_ok()
+}
+
+fn port_check(port: u16) -> Outcome {
+    if port_open(port) {
+        Outcome::new(Status::Fail, format!("port {port}"))
+    } else {
+        Outcome::pass()
+    }
+}
+
+/// Private key files in ~/.ssh (files that start with a PRIVATE KEY header).
+fn ssh_private_keys(ctx: &Ctx) -> Vec<PathBuf> {
+    let mut keys: Vec<PathBuf> = std::fs::read_dir(ctx.home.join(".ssh"))
+        .map(|rd| {
+            rd.flatten()
+                .map(|e| e.path())
+                .filter(|p| p.is_file())
+                .collect()
+        })
+        .unwrap_or_default();
+    keys.retain(|p| {
+        use std::io::Read;
+        let mut head = [0u8; 64];
+        let n = std::fs::File::open(p)
+            .and_then(|mut f| f.read(&mut head))
+            .unwrap_or(0);
+        let head = String::from_utf8_lossy(&head[..n]);
+        head.starts_with("-----BEGIN") && head.contains("PRIVATE KEY")
+    });
+    keys.sort();
+    keys
+}
+
+fn file_name(p: &Path) -> String {
+    p.file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// Lower-case (keyword, value) pairs from the user's and the system SSH client config.
+fn ssh_client_options(ctx: &Ctx) -> Vec<(String, String)> {
+    [
+        ctx.home.join(".ssh/config"),
+        PathBuf::from("/etc/ssh/ssh_config"),
+    ]
+    .iter()
+    .filter_map(|p| std::fs::read_to_string(p).ok())
+    .flat_map(|text| {
+        text.lines()
+            .filter_map(|l| {
+                let l = l.trim();
+                if l.starts_with('#') {
+                    return None;
+                }
+                let mut f = l.splitn(2, |c: char| c.is_whitespace() || c == '=');
+                let k = f.next()?.to_lowercase();
+                let v = f
+                    .next()?
+                    .trim()
+                    .trim_start_matches('=')
+                    .trim()
+                    .to_lowercase();
+                Some((k, v))
+            })
+            .collect::<Vec<_>>()
+    })
+    .collect()
 }
 
 /// Runs the check for one item.
@@ -825,6 +911,142 @@ pub fn check(id: &str, ctx: &Ctx) -> Outcome {
             ctx.user_default(&["com.apple.Terminal", "SecureKeyboardEntry"])
                 .as_deref(),
         )),
+
+        "file_sharing" => port_check(445),
+        "remote_management" => port_check(3283),
+        "remote_apple_events" => port_check(3031),
+        "media_sharing" => port_check(3689),
+        "printer_sharing" => {
+            if !exists("/usr/sbin/cupsctl") {
+                return Outcome::skip();
+            }
+            let out = run("cupsctl", &[]);
+            let on: Vec<String> = ["_share_printers", "_remote_admin", "_remote_any"]
+                .iter()
+                .filter(|k| out.contains(&format!("{k}=1")))
+                .map(|k| k.trim_start_matches('_').to_string())
+                .collect();
+            if on.is_empty() {
+                Outcome::pass()
+            } else {
+                Outcome::new(Status::Fail, join(&on))
+            }
+        }
+        "internet_sharing" => {
+            // A missing file or key means Internet Sharing was never turned on.
+            let v = run_status(
+                "/usr/libexec/PlistBuddy",
+                &[
+                    "-c",
+                    "Print :NAT:Enabled",
+                    "/Library/Preferences/SystemConfiguration/com.apple.nat.plist",
+                ],
+            );
+            Outcome::when(!(v.0 && v.1.trim() == "1"))
+        }
+
+        "sudo_password" => {
+            if !ctx.root {
+                return Outcome::new(Status::Skip, ctx.t("needs sudo", "cần sudo"));
+            }
+            let mut files = vec![PathBuf::from("/etc/sudoers")];
+            if let Ok(rd) = std::fs::read_dir("/etc/sudoers.d") {
+                files.extend(rd.flatten().map(|e| e.path()));
+            }
+            let rules: Vec<String> = files
+                .iter()
+                .filter_map(|p| std::fs::read_to_string(p).ok())
+                .flat_map(|t| {
+                    t.lines()
+                        .map(str::trim)
+                        .filter(|l| !l.starts_with('#') && l.contains("NOPASSWD"))
+                        .map(str::to_string)
+                        .collect::<Vec<_>>()
+                })
+                .collect();
+            if rules.is_empty() {
+                Outcome::pass()
+            } else {
+                Outcome::new(Status::Fail, rules.join("; "))
+            }
+        }
+        "ssh_key_passphrase" => {
+            let keys = ssh_private_keys(ctx);
+            if keys.is_empty() {
+                return Outcome::skip();
+            }
+            let open: Vec<String> = keys
+                .iter()
+                .filter(|k| {
+                    let path = k.to_string_lossy();
+                    // With an empty passphrase, ssh-keygen succeeds only on unprotected keys.
+                    let (ok, out) =
+                        ctx.as_user_status("ssh-keygen", &["-y", "-P", "", "-f", &path]);
+                    ok && !out.starts_with("sk-")
+                })
+                .map(|k| file_name(k))
+                .collect();
+            if open.is_empty() {
+                Outcome::pass()
+            } else {
+                Outcome::new(Status::Fail, join(&open))
+            }
+        }
+        "ssh_key_strength" => {
+            let mut weak = Vec::new();
+            let mut seen = false;
+            for k in ssh_private_keys(ctx) {
+                let public = PathBuf::from(format!("{}.pub", k.to_string_lossy()));
+                if !public.exists() {
+                    continue;
+                }
+                seen = true;
+                // e.g. "3072 SHA256:... comment (RSA)"
+                let out = run("ssh-keygen", &["-l", "-f", &public.to_string_lossy()]);
+                let bits: u32 = out
+                    .split_whitespace()
+                    .next()
+                    .and_then(|b| b.parse().ok())
+                    .unwrap_or(0);
+                let kind = out
+                    .rsplit('(')
+                    .next()
+                    .unwrap_or("")
+                    .trim()
+                    .trim_end_matches(')')
+                    .to_uppercase();
+                if kind == "DSA" || (kind == "RSA" && bits < 3072) {
+                    weak.push(format!("{} ({kind} {bits})", file_name(&k)));
+                }
+            }
+            if !seen {
+                Outcome::skip()
+            } else if weak.is_empty() {
+                Outcome::pass()
+            } else {
+                Outcome::new(Status::Fail, join(&weak))
+            }
+        }
+        "ssh_host_keys" => {
+            let bad: Vec<String> = ssh_client_options(ctx)
+                .into_iter()
+                .filter(|(k, v)| {
+                    (k == "stricthostkeychecking" && (v == "no" || v == "off"))
+                        || (k == "userknownhostsfile" && v == "/dev/null")
+                })
+                .map(|(k, v)| format!("{k} {v}"))
+                .collect();
+            if bad.is_empty() {
+                Outcome::pass()
+            } else {
+                Outcome::new(Status::Fail, join(&bad))
+            }
+        }
+        "ssh_agent_forwarding" => Outcome::when(
+            !ssh_client_options(ctx)
+                .iter()
+                .any(|(k, v)| k == "forwardagent" && v == "yes"),
+        ),
         _ => Outcome::new(Status::Skip, format!("no check for {id}")),
     }
 }
@@ -886,5 +1108,68 @@ mod tests {
         );
         assert_eq!(field("State: On", "State").as_deref(), Some("On"));
         assert_eq!(field("nothing", "State"), None);
+    }
+
+    #[test]
+    fn detects_listening_port() {
+        let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = l.local_addr().unwrap().port();
+        assert!(port_open(port));
+        // A freed ephemeral port can be reused by the probing socket itself, so test
+        // the closed case on port 1 (tcpmux), which macOS never listens on.
+        drop(l);
+        assert!(!port_open(1));
+    }
+
+    /// Builds a throwaway home with SSH keys and a client config, and checks the SSH items.
+    #[test]
+    fn ssh_checks() {
+        let home = std::env::temp_dir().join(format!("macguard-ssh-{}", std::process::id()));
+        let ssh = home.join(".ssh");
+        let _ = std::fs::remove_dir_all(&home);
+        std::fs::create_dir_all(&ssh).unwrap();
+        let ctx = Ctx {
+            lang: Lang::En,
+            root: false,
+            user: "nobody".into(),
+            home: home.clone(),
+        };
+        let keygen = |name: &str, kind: &str, bits: &str, pass: &str| {
+            let path = ssh.join(name);
+            let ok = Command::new("ssh-keygen")
+                .args(["-q", "-t", kind, "-b", bits, "-N", pass, "-C", "", "-f"])
+                .arg(&path)
+                .status()
+                .unwrap()
+                .success();
+            assert!(ok, "ssh-keygen {name}");
+        };
+        // as_user runs commands directly when not root, so the user name is irrelevant here.
+        keygen("open_ed25519", "ed25519", "256", "");
+        keygen("locked_ed25519", "ed25519", "256", "correct horse");
+        keygen("weak_rsa", "rsa", "2048", "correct horse");
+
+        let o = check("ssh_key_passphrase", &ctx);
+        assert_eq!(o.status, Status::Fail);
+        assert_eq!(o.detail, "open_ed25519");
+
+        let o = check("ssh_key_strength", &ctx);
+        assert_eq!(o.status, Status::Fail);
+        assert!(o.detail.starts_with("weak_rsa (RSA 2048)"), "{}", o.detail);
+
+        assert_eq!(check("ssh_host_keys", &ctx).status, Status::Pass);
+        assert_eq!(check("ssh_agent_forwarding", &ctx).status, Status::Pass);
+        std::fs::write(
+            ssh.join("config"),
+            "Host *\n  StrictHostKeyChecking no\n  ForwardAgent=yes\n# UserKnownHostsFile /dev/null\n",
+        )
+        .unwrap();
+        let o = check("ssh_host_keys", &ctx);
+        assert_eq!(
+            (o.status, o.detail.as_str()),
+            (Status::Fail, "stricthostkeychecking no")
+        );
+        assert_eq!(check("ssh_agent_forwarding", &ctx).status, Status::Fail);
+        let _ = std::fs::remove_dir_all(&home);
     }
 }
